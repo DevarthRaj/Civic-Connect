@@ -1,0 +1,507 @@
+ABSTRACT
+
+CivicConnect is a web-based platform designed to streamline and enhance grievance redressal in public service delivery.
+It empowers citizens to lodge complaints related to civic issues such as road maintenance, streetlights, water supply,
+and more,ensuring a transparent and accountable resolution process.
+The platform supports a structured complaint lifecycle—from submission to resolution—enabling efficient tracking and management. 
+CivicConnect features role-based access for three user types: 
+Citizens, who can file, monitor, and provide feedback on complaints; Department Officers, who update and manage complaint progress; and Administrators, who oversee operations, assign tasks, manage categories, and generate reports. 
+This layered access ensures that responsibilities are clearly defined and efficiently executed. 
+The backend uses a relational database to manage data across multiple interconnected tables, including users, departments, complaints, feedback, and categories. 
+This structure ensures data consistency, integrity, and traceability, making it easier to monitor complaint histories and service performance.
+By integrating registration, assignment, monitoring, and feedback into one system, CivicConnect showcases the real-world utility of Database Management Systems (DBMS) in governance.
+It not only improves service efficiency but also fosters citizen trust by offering visibility into how their grievances are being handled.
+
+
+TABLES
+
+🔹 1. users
+
+Stores all types of system users (citizens, officers, admins).
+
+Columns:
+
+user_id (PK)
+
+name
+
+email
+
+phone
+
+password_hash
+
+role (citizen / officer / admin)
+
+created_at
+
+🔹 2. citizens
+
+Stores citizen-specific details, separate from general users.
+
+Linked to users via user_id.
+
+Columns:
+
+citizen_id (PK)
+
+user_id (FK → users.user_id)
+
+address
+
+city
+
+pincode
+
+🔹 3. departments
+
+Represents government service divisions (Water, Roads, Streetlights, etc.).
+
+Columns:
+
+department_id (PK)
+
+department_name
+
+description
+
+🔹 4. categories
+
+Complaint types (each linked to a department).
+
+Columns:
+
+category_id (PK)
+
+department_id (FK → departments.department_id)
+
+category_name
+
+description
+
+🔹 5. complaints
+
+Central table for all lodged grievances.
+
+Columns:
+
+complaint_id (PK)
+
+citizen_id (FK → citizens.citizen_id)
+
+category_id (FK → categories.category_id)
+
+title
+
+description
+
+location
+
+photo_url (optional)
+
+status (Pending / In Progress / Resolved / Rejected)
+
+priority (Low / Medium / High)
+
+created_at, updated_at
+
+🔹 6. feedback
+
+Citizens provide feedback on resolved complaints.
+
+Columns:
+
+feedback_id (PK)
+
+complaint_id (FK → complaints.complaint_id)
+
+citizen_id (FK → citizens.citizen_id)
+
+rating (1–5 or Satisfied/Not Satisfied)
+
+comments
+
+created_at
+
+
+RELATIONS
+
+users ↔ citizens: One user can be a citizen (1-to-1).
+
+departments ↔ categories: One department can have many categories (1-to-many).
+
+citizens ↔ complaints: One citizen can file many complaints (1-to-many).
+
+categories ↔ complaints: Each complaint belongs to one category (many-to-1).
+
+complaints ↔ feedback: One complaint can have one feedback entry (1-to-1).
+
+
+FOLDER STRUCTURE(PLEASE UPDATE THIS IF YOU MADE ANY MODIFICATIONS)
+
+civicconnect/
+│── public/
+│   ├── index.html
+│   ├── favicon.ico
+│   └── assets/               # Static assets (images, icons, logos)
+│
+│── src/
+│   │── index.js              # Entry point
+│   │── App.js                # Main app component with routes
+│   │── App.css
+│   │
+│   ├── components/           # Reusable components (UI building blocks)
+│   │   ├── Navbar.js
+│   │   ├── Sidebar.js
+│   │   ├── Footer.js
+│   │   ├── ProtectedRoute.js # Route guard for roles
+│   │   └── ...
+│   │
+│   ├── pages/                # Page-level components
+│   │   ├── common/           # Common pages for all roles
+│   │   │   ├── Home.js
+│   │   │   ├── Login.js
+│   │   │   ├── Register.js
+│   │   │   └── Profile.js
+│   │   │
+│   │   ├── citizen/          # Citizen-specific pages
+│   │   │   ├── CitizenDashboard.js
+│   │   │   ├── FileComplaint.js
+│   │   │   ├── MyComplaints.js
+│   │   │   ├── ComplaintDetails.js
+│   │   │   └── Feedback.js
+│   │   │
+│   │   ├── officer/          # Department Officer pages
+│   │   │   ├── OfficerDashboard.js
+│   │   │   ├── ComplaintManagement.js
+│   │   │   ├── ComplaintDetails.js
+│   │   │   └── Reports.js
+│   │   │
+│   │   ├── admin/            # Admin pages
+│   │   │   ├── AdminDashboard.js
+│   │   │   ├── UserManagement.js
+│   │   │   ├── DepartmentManagement.js
+│   │   │   ├── CategoryManagement.js
+│   │   │   ├── ComplaintOversight.js
+│   │   │   └── Reports.js
+│   │   │
+│   │   └── NotFound.js       # 404 fallback
+│   │
+│   ├── services/             # API calls (fetch/axios)
+│   │   ├── authService.js
+│   │   ├── complaintService.js
+│   │   ├── userService.js
+│   │   └── departmentService.js
+│   │
+│   ├── context/              # Context API (auth, theme, etc.)
+│   │   └── AuthContext.js
+│   │
+│   ├── hooks/                # Custom React hooks
+│   │   └── useAuth.js
+│   │
+│   ├── utils/                # Helpers & constants
+│   │   ├── roles.js
+│   │   ├── formatDate.js
+│   │   └── validators.js
+│   │
+│   ├── styles/               # Centralized styling (CSS or SCSS)
+│   │   ├── globals.css
+│   │   └── variables.css
+│   │
+│   └── router/               # App routing setup
+│       └── AppRouter.js
+│
+└── package.json
+
+
+
+
+PAGES
+
+🌐 Common Pages (Accessible to All Roles)
+1. Home / Landing Page
+
+Purpose: Entry point for visitors. Explains the platform.
+
+Contents:
+
+Hero section: “Report issues, track progress, build better communities.”
+
+Features overview (file complaints, transparent tracking, feedback).
+
+Call-to-action → Login / Register.
+
+Actions:
+
+Navigate to Login/Register.
+
+2. Login Page
+
+Purpose: Single login for all roles.
+
+Contents:
+
+Email/Phone + Password form.
+
+“Forgot Password” option.
+
+Logic:
+
+After login, check role → redirect to:
+
+Citizen → CitizenDashboard
+
+Officer → OfficerDashboard
+
+Admin → AdminDashboard
+
+3. Register Page (for Citizens only)
+
+Purpose: Allow new citizens to sign up.
+
+Contents:
+
+Fields: Name, Email, Phone, Address, Password, Confirm Password.
+
+Actions:
+
+On success → redirect to Login.
+
+4. Profile / Settings
+
+Purpose: Manage user info.
+
+Contents:
+
+Edit Name, Phone, Address.
+
+Change password.
+
+Actions:
+
+Update details.
+
+5. NotFound (404)
+
+Purpose: Catch invalid routes.
+
+Contents:
+
+Message: “Page not found.”
+
+Link to Home.
+
+👤 Citizen Pages
+1. Citizen Dashboard
+
+Purpose: Overview of user’s activity.
+
+Contents:
+
+Cards: “Total Complaints,” “Pending,” “In Progress,” “Resolved.”
+
+Quick link → File Complaint.
+
+Actions:
+
+Navigate to My Complaints or File Complaint.
+
+2. File Complaint
+
+Purpose: Lodge a new grievance.
+
+Contents:
+
+Form: Category (dropdown), Title, Description, Location, Upload Image.
+
+Actions:
+
+Submit → Complaint ID generated.
+
+3. My Complaints
+
+Purpose: Track all filed complaints.
+
+Contents:
+
+List view with complaint title, category, status, last updated.
+
+Filters: By status (Pending, In Progress, Resolved).
+
+Actions:
+
+Click → open Complaint Details.
+
+4. Complaint Details
+
+Purpose: Show full information & timeline of updates.
+
+Contents:
+
+Complaint info (title, description, category, photo, location).
+
+Timeline of status updates by officer.
+
+Officer remarks.
+
+Actions:
+
+If resolved → link to give Feedback.
+
+5. Feedback
+
+Purpose: Rate the resolution.
+
+Contents:
+
+Complaint info (brief).
+
+Feedback form: Rating (1–5 or Satisfied/Not Satisfied), Comments.
+
+Actions:
+
+Submit feedback.
+
+🏢 Department Officer Pages
+1. Officer Dashboard
+
+Purpose: Overview of assigned complaints.
+
+Contents:
+
+Metrics: New Complaints, In Progress, Resolved.
+
+Graph of resolution trends.
+
+Actions:
+
+Navigate to Complaint Management.
+
+2. Complaint Management
+
+Purpose: Handle complaints assigned to department.
+
+Contents:
+
+List of complaints with filters (New, In Progress, Resolved).
+
+Each row → complaint title, citizen name, category, status.
+
+Actions:
+
+Update complaint status (Acknowledged, In Progress, Resolved, Rejected).
+
+Add officer notes.
+
+3. Complaint Details
+
+Purpose: Deep dive into complaint.
+
+Contents:
+
+Complaint info, citizen details.
+
+Status timeline.
+
+Actions:
+
+Update status.
+
+Add remarks.
+
+4. Reports
+
+Purpose: Department performance insights.
+
+Contents:
+
+Stats: Number of complaints handled, avg resolution time.
+
+Charts (bar/pie).
+
+Actions:
+
+Export as PDF/CSV (optional).
+
+🛠 Admin Pages
+1. Admin Dashboard
+
+Purpose: System-wide overview.
+
+Contents:
+
+Total complaints, pending vs resolved, top-performing departments.
+
+Charts: Complaints trend, department workload.
+
+Actions:
+
+Quick navigation to management sections.
+
+2. User Management
+
+Purpose: Manage users (citizens, officers, admins).
+
+Contents:
+
+List of users with role, department (if officer).
+
+Actions:
+
+Add officer/admin.
+
+Edit/remove user.
+
+3. Department Management
+
+Purpose: Manage civic departments.
+
+Contents:
+
+List of departments.
+
+Actions:
+
+Add/edit/remove department.
+
+Assign officers.
+
+4. Category Management
+
+Purpose: Manage complaint categories.
+
+Contents:
+
+List of categories.
+
+Actions:
+
+Add/edit/remove categories.
+
+5. Complaint Oversight
+
+Purpose: Monitor all complaints across departments.
+
+Contents:
+
+Table of complaints with citizen, category, department, status.
+
+Actions:
+
+Reassign complaint.
+
+Escalate complaint.
+
+6. Reports & Analytics
+
+Purpose: High-level statistics.
+
+Contents:
+
+Trends (complaints by category, department efficiency).
+
+SLA compliance.
+
+Actions:
+
+Export reports (PDF, Excel).
