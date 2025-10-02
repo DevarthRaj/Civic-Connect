@@ -3,7 +3,6 @@ import { Box, Container, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 const AuthContainer = styled(Paper)(({ theme }) => ({
-  marginTop: theme.spacing(8),
   padding: theme.spacing(4),
   display: 'flex',
   flexDirection: 'column',
