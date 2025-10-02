@@ -76,11 +76,10 @@ export const fileComplaint = async (complaintData) => {
   return data[0];
 };
 
-// Get all complaint categories
 export const getCategories = async () => {
   const { data, error } = await supabase
-    .from("categories")   // 👈 make sure your table is called 'categories'
-    .select("id, name, department");
+    .from("categories")
+    .select("category_id, category_name, description");
 
   if (error) throw error;
   return data;
