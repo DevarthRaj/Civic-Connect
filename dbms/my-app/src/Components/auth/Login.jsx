@@ -44,61 +44,68 @@ const Login = () => {
           }
         }
 
-        // Get user data from your users table with proper error handling
+        // Get user data from your users table with robust error handling
         let userData = null;
-        try {
-          // First, get the current authenticated user's ID
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          if (!user) {
-            throw new Error('Authentication failed. Please try again.');
-          }
-
-          console.log('Authenticated user:', user.id);
-
-          // Try to fetch user data directly first
-          const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', values.email)
-            .single();
-
-          console.log('Fetched user data:', data);
-
-          if (error) {
-            console.error('Error fetching user data:', error);
-            throw new Error('Failed to fetch user data. Please contact support.');
-          }
-
-          if (!data) {
-            // If no user record exists, create one with default role 'citizen'
-            const { data: newUser, error: insertError } = await supabase
-              .from('users')
-              .insert([
-                {
-                  user_id: user.id,
-                  email: values.email,
-                  name: values.email.split('@')[0],
-                  role: 'citizen'
-                }
-              ])
-              .single();
-
-            if (insertError) {
-              console.error('Error creating user:', insertError);
-              throw new Error('Failed to create user profile. Please contact support.');
-            }
-
-            userData = newUser;
-          } else {
-            userData = data;
-          }
-          console.log('Retrieved user data:', userData);
-        } catch (dbError) {
-          console.error('Database error:', dbError);
-          setLoading(false);
-          throw new Error('Failed to load user profile. Please contact support.');
+        // Get the current authenticated user's ID
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error('Authentication failed. Please try again.');
         }
+
+        const userId = user.id;
+        console.log('Authenticated user:', userId);
+
+        // Prefer lookup by user_id (stable, not affected by email changes)
+        const { data: foundUser, error: selectErr } = await supabase
+          .from('users')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (selectErr) {
+          // Likely an RLS policy issue; log and continue with fallback attempts
+          console.warn('User select error (continuing with fallback):', selectErr?.message || selectErr);
+        }
+
+        if (foundUser) {
+          userData = foundUser;
+        } else {
+          // Try to create or ensure a row exists using upsert (idempotent)
+          const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+          const fallbackRole = (user.user_metadata?.role || 'citizen').toLowerCase();
+          const { data: upserted, error: upsertErr } = await supabase
+            .from('users')
+            .upsert(
+              [{
+                user_id: userId,
+                email: user.email,
+                name: fallbackName,
+                role: fallbackRole,
+              }],
+              { onConflict: 'user_id' }
+            )
+            .select()
+            .maybeSingle();
+
+          if (upsertErr) {
+            // If even upsert is blocked (RLS), fall back to using auth metadata only
+            console.warn('User upsert error (falling back to auth metadata):', upsertErr?.message || upsertErr);
+            userData = {
+              user_id: userId,
+              email: user.email,
+              name: fallbackName,
+              role: fallbackRole,
+            };
+          } else {
+            userData = upserted || {
+              user_id: userId,
+              email: user.email,
+              name: fallbackName,
+              role: fallbackRole,
+            };
+          }
+        }
+        console.log('Resolved user profile:', userData);
 
         // Store user session with validated data
         const userSession = {
@@ -115,7 +122,7 @@ const Login = () => {
         localStorage.setItem('token', userSession.token);
 
         // Redirect based on validated role
-        switch(userData.role.toLowerCase()) {
+        switch((userData.role || 'citizen').toLowerCase()) {
           case 'admin':
             console.log('Redirecting to admin dashboard');
             navigate('/admin');
@@ -224,22 +231,6 @@ const Login = () => {
         </Grid>
       </Box>
       
-      <Box sx={{ mt: 4, textAlign: 'center', width: '100%' }}>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Demo Accounts:
-        </Typography>
-        <Box sx={{ mt: 1, textAlign: 'left', backgroundColor: '#f5f5f5', p: 2, borderRadius: 1 }}>
-          <Typography variant="body2">
-            <strong>Admin:</strong> admin@example.com / admin123
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            <strong>Citizen:</strong> citizen@example.com / citizen123
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            <strong>Officer:</strong> officer@example.com / officer123
-          </Typography>
-        </Box>
-      </Box>
     </Box>
   );
 };
