@@ -51,8 +51,11 @@ const ComplaintManagement = () => {
       <Button onClick={() => navigate('/officer')} sx={{ mb: 2 }}>
         Back to Officer Dashboard
       </Button>
-      <Typography variant="h4" gutterBottom>Complaint Management</Typography>
+      <Typography variant="h4" gutterBottom>
+        Complaint Management
+      </Typography>
       <Paper sx={{ p: 2, mb: 2 }}>
+        {/* Filters */}
         <Box display="flex" gap={2} mb={2}>
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Status</InputLabel>
@@ -73,8 +76,15 @@ const ComplaintManagement = () => {
               <MenuItem value="Electricity">Electricity</MenuItem>
             </Select>
           </FormControl>
-          <TextField size="small" label="Search" value={search} onChange={e => setSearch(e.target.value)} />
+          <TextField
+            size="small"
+            label="Search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </Box>
+
+        {/* Table */}
         <TableContainer>
           <Table>
             <TableHead>
@@ -87,20 +97,28 @@ const ComplaintManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredComplaints.map(row => (
-                <TableRow
-                  key={row.complaint_id}
-                  hover
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/officer/complaints/${row.complaint_id}`)}
-                >
-                  <TableCell>{row.complaint_id}</TableCell>
-                  <TableCell>{row.citizens?.full_name || 'N/A'}</TableCell>
-                  <TableCell>{row.categories?.category_name || 'N/A'}</TableCell>
-                  <TableCell>{row.status}</TableCell>
-                  <TableCell>{new Date(row.created_at).toLocaleDateString()}</TableCell>
+              {filteredComplaints.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    No complaints found
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredComplaints.map(row => (
+                  <TableRow
+                    key={row.complaint_id}
+                    hover
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/officer/complaints/${row.complaint_id}`)}
+                  >
+                    <TableCell>{row.complaint_id}</TableCell>
+                    <TableCell>{row.citizens?.full_name || 'N/A'}</TableCell>
+                    <TableCell>{row.categories?.category_name || 'N/A'}</TableCell>
+                    <TableCell>{row.status}</TableCell>
+                    <TableCell>{new Date(row.created_at).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
