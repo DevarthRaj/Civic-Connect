@@ -20,7 +20,7 @@ import {
   List as ListIcon,
   Error as ErrorIcon
 } from '@mui/icons-material';
-import { getAllComplaints } from "../../services/complaintService"; // corrected import
+import { getAllComplaints } from "../../services/complaintService"; 
 
 const Dashboard = () => {
   const navigate = useNavigate();

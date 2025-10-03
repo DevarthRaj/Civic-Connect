@@ -1,4 +1,6 @@
 import { supabase } from "./supabase";
+const { data: { user }, error } = await supabase.auth.getUser();
+console.log(user?.id); // should not be null
 
 // Get complaints for a specific citizen
 export const getCitizenComplaints = async (citizenId) => {
@@ -12,8 +14,8 @@ export const getCitizenComplaints = async (citizenId) => {
       priority,
       created_at,
       updated_at,
-      categories:category_id (category_name),
-      citizens:citizen_id (citizen_id, user_id)
+      categories (category_name),
+      citizens (citizen_id, user_id)
     `)
     .eq("citizen_id", citizenId)
     .order("created_at", { ascending: false });
@@ -34,8 +36,8 @@ export const getAllComplaints = async () => {
       priority,
       created_at,
       updated_at,
-       categories:category_id (category_name),
-      citizens:citizen_id (citizen_id, user_id)
+      categories (category_name),
+      citizens (citizen_id, user_id)
     `)
     .order("created_at", { ascending: false });
 
@@ -55,8 +57,8 @@ export const getComplaintById = async (complaintId) => {
       priority,
       created_at,
       updated_at,
-      categories:category_id!inner (category_name),
-      citizens:citizen_id (citizen_id, user_id)
+      categories (category_name),
+      citizens (citizen_id, user_id)
     `)
     .eq("complaint_id", complaintId)
     .single();
@@ -103,6 +105,7 @@ export const fileComplaint = async (values,citizenId,departmentId) => {
     .insert([
       {
         citizen_id: citizenId, 
+        department_id: departmentId, 
         category_id: categoryData.category_id,
         title: title, 
         location,
