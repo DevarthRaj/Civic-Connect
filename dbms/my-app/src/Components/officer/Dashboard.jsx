@@ -1,34 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, Grid, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { getAllComplaints } from "../../services/complaintService";
+import { officerService } from "../../services/officerService";
 
 const OfficerDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
+    in_progress: 0,
     resolved: 0,
     highPriority: 0,
   });
 
   useEffect(() => {
-    const fetchComplaints = async () => {
+    const fetchStats = async () => {
       try {
-        const complaints = await getAllComplaints();
-
-        const total = complaints.length;
-        const pending = complaints.filter(c => c.status === "pending").length;
-        const resolved = complaints.filter(c => c.status === "resolved").length;
-        const highPriority = complaints.filter(c => c.priority === "High").length;
-
-        setStats({ total, pending, resolved, highPriority });
+        const statsData = await officerService.getComplaintStats();
+        setStats({
+          total: statsData.total,
+          pending: statsData.pending,
+          in_progress: statsData.in_progress,
+          resolved: statsData.resolved,
+          highPriority: statsData.high_priority
+        });
       } catch (error) {
-        console.error("Error fetching complaints:", error);
+        console.error("Error fetching complaint stats:", error);
       }
     };
 
-    fetchComplaints();
+    fetchStats();
   }, []);
 
   return (
@@ -50,6 +51,14 @@ const OfficerDashboard = () => {
             <Typography variant="h6">Pending</Typography>
             <Typography variant="h4" color="orange">
               {stats.pending}
+            </Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper elevation={3} sx={{ p: 2, textAlign: "center" }}>
+            <Typography variant="h6">In Progress</Typography>
+            <Typography variant="h4" color="blue">
+              {stats.in_progress}
             </Typography>
           </Paper>
         </Grid>

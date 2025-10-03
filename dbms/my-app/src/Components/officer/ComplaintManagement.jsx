@@ -5,45 +5,41 @@ import {
   TextField, Select, MenuItem, InputLabel, FormControl
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../services/supabase';
+import { officerService } from '../../services/officerService';
 
 const ComplaintManagement = () => {
   const navigate = useNavigate();
   const [complaints, setComplaints] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [status, setStatus] = useState('');
   const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const fetchComplaints = async () => {
-      const { data, error } = await supabase
-        .from('complaints')
-        .select(`
-          complaint_id,
-          title,
-          status,
-          created_at,
-          categories(category_name),
-          citizens(full_name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching complaints:', error.message);
-      } else {
-        setComplaints(data);
+    const fetchData = async () => {
+      try {
+        const [complaintsData, categoriesData] = await Promise.all([
+          officerService.getAllComplaints(),
+          officerService.getCategories()
+        ]);
+        
+        setComplaints(complaintsData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
       }
     };
 
-    fetchComplaints();
+    fetchData();
   }, []);
 
   const filteredComplaints = complaints.filter(c =>
     (!status || c.status === status) &&
-    (!category || c.categories?.category_name === category) &&
+    (!category || c.category === category) &&
     (!search ||
-      c.citizens?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      c.complaint_id.toString().includes(search))
+      c.citizen_name?.toLowerCase().includes(search.toLowerCase()) ||
+      c.complaint_id.toString().includes(search) ||
+      c.title?.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -61,19 +57,21 @@ const ComplaintManagement = () => {
             <InputLabel>Status</InputLabel>
             <Select value={status} label="Status" onChange={e => setStatus(e.target.value)}>
               <MenuItem value="">All</MenuItem>
-              <MenuItem value="Pending">Pending</MenuItem>
-              <MenuItem value="In Progress">In Progress</MenuItem>
-              <MenuItem value="Resolved">Resolved</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="in-progress">In Progress</MenuItem>
+              <MenuItem value="resolved">Resolved</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Category</InputLabel>
             <Select value={category} label="Category" onChange={e => setCategory(e.target.value)}>
               <MenuItem value="">All</MenuItem>
-              <MenuItem value="Sanitation">Sanitation</MenuItem>
-              <MenuItem value="Roads">Roads</MenuItem>
-              <MenuItem value="Water">Water</MenuItem>
-              <MenuItem value="Electricity">Electricity</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.category_id} value={cat.category_name}>
+                  {cat.category_name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           <TextField
@@ -112,8 +110,8 @@ const ComplaintManagement = () => {
                     onClick={() => navigate(`/officer/complaints/${row.complaint_id}`)}
                   >
                     <TableCell>{row.complaint_id}</TableCell>
-                    <TableCell>{row.citizens?.full_name || 'N/A'}</TableCell>
-                    <TableCell>{row.categories?.category_name || 'N/A'}</TableCell>
+                    <TableCell>{row.citizen_name || 'N/A'}</TableCell>
+                    <TableCell>{row.category || 'N/A'}</TableCell>
                     <TableCell>{row.status}</TableCell>
                     <TableCell>{new Date(row.created_at).toLocaleDateString()}</TableCell>
                   </TableRow>
