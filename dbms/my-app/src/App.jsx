@@ -19,10 +19,10 @@ import Register from './Components/auth/Register';
 
 // Citizen Pages
 import CitizenDashboard from './Components/citizen/Dashboard';
-import FileComplaint from './Components/citizen/FileComplaint';
 import MyComplaints from './Components/citizen/MyComplaints';
 import ComplaintDetails from './Components/citizen/ComplaintDetails';
 import Feedback from './Components/citizen/Feedback';
+import FileComplaint from './Components/citizen/FileComplaint';
 
 // Admin Pages
 import AdminDashboard from './Components/admin/Dashboard';
@@ -42,7 +42,7 @@ const theme = createTheme({
       main: '#1976d2',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#9c27b0',
     },
   },
   typography: {
