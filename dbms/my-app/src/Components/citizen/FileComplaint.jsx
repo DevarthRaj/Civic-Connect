@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../services/supabase'; // adjust the path if needed
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, Typography, TextField, Button, Paper, Grid, FormControl, InputLabel, 
@@ -58,27 +59,42 @@ const FileComplaint = () => {
     },
     validationSchema,
     onSubmit: async (values) => {
-      try {
-        setIsSubmitting(true);
-        setError('');
-        const citizenId = "uuid-of-citizen"; // get from auth/session
-    const departmentId = "uuid-of-department";
+  try {
+    setIsSubmitting(true);
+    setError('');
 
-        await fileComplaint(values,citizenId,departmentId); // API call to submit complaint
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error("User not authenticated");
 
-        setSubmitSuccess(true);
-        formik.resetForm();
-        setPreviewUrl('');
+    const { data: citizenData, error: citizenError } = await supabase
+      .from('citizens')
+      .select('citizen_id')
+      .eq('user_id', user.id)
+      .single();
 
-        // Redirect after a short delay
-        setTimeout(() => navigate('/my-complaints'), 2000);
-      } catch (err) {
-        console.error('Error submitting complaint:', err);
-        setError('Failed to submit complaint. Please try again.');
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
+    if (citizenError || !citizenData) throw new Error("Citizen record not found");
+
+    const citizenId = citizenData.citizen_id;
+
+    const departmentId = "uuid-of-department"; // you can fetch dynamically if needed
+
+    await fileComplaint(values, citizenId, departmentId);
+
+    setSubmitSuccess(true);
+    formik.resetForm();
+    setPreviewUrl('');
+
+    setTimeout(() => navigate('/my-complaints'), 2000);
+
+  } catch (err) {
+    console.error('Error submitting complaint:', err);
+    setError(err.message || 'Failed to submit complaint. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+}
+
+   ,
   });
 
   const handlePhotoChange = (event) => {
@@ -137,7 +153,7 @@ const FileComplaint = () => {
                 >
                   <MenuItem value=""><em>Select a category</em></MenuItem>
                   {categories.map((cat) => (
-                    <MenuItem key={cat.category_id} value={cat.category_name}>{cat.category_name} ({cat.description})</MenuItem>
+                    <MenuItem key={cat.category_id} value={cat.category_id}>{cat.category_name} ({cat.description})</MenuItem>
                   ))}
                 </Select>
                 <FormHelperText>{formik.touched.category && formik.errors.category}</FormHelperText>
