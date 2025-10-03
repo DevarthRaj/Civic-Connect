@@ -8,6 +8,11 @@ import { supabase } from '../../services/supabase';
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Name is required'),
+  username: Yup.string()
+    .matches(/^[a-zA-Z0-9_\.\-]{3,30}$/,
+      '3-30 chars, letters, numbers, underscore, dot or hyphen')
+    .required('Username is required'),
+  citizenId: Yup.string().required('Citizen ID is required'),
   email: Yup.string().email('Invalid email address').required('Email is required'),
   password: Yup.string()
     .min(8, 'Password must be at least 8 characters')
@@ -16,6 +21,10 @@ const validationSchema = Yup.object({
     .oneOf([Yup.ref('password'), null], 'Passwords must match')
     .required('Confirm Password is required'),
   role: Yup.string().required('Role is required'),
+  // Address fields are optional here but can be required for specific roles if needed
+  address: Yup.string().max(500, 'Address too long'),
+  city: Yup.string().max(120, 'City too long'),
+  pincode: Yup.string().max(20, 'Pincode too long'),
 });
 
 const roles = [
@@ -36,10 +45,15 @@ const Register = () => {
   const formik = useFormik({
     initialValues: {
       name: '',
+      username: '',
+      citizenId: '',
       email: '',
       password: '',
       confirmPassword: '',
       role: 'citizen',
+      address: '',
+      city: '',
+      pincode: '',
     },
     validationSchema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
@@ -69,6 +83,11 @@ const Register = () => {
             data: {
               name: values.name,
               role: values.role,
+              username: values.username,
+              citizenId: values.citizenId,
+              address: values.address,
+              city: values.city,
+              pincode: values.pincode,
             },
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
@@ -90,17 +109,24 @@ const Register = () => {
 
         // 3. Add user to your custom users table using a stored procedure
         if (authData.user) {
+          const looksLikeUuid = (s) => typeof s === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(s);
           const { data, error: dbError } = await supabase.rpc('handle_new_user_registration', {
             p_user_id: authData.user.id,
             p_email: values.email,
             p_name: values.name,
-            p_role: values.role
+            p_role: values.role,
+            p_citizen_id: looksLikeUuid(values.citizenId) ? values.citizenId : null,
+            p_address: values.address || null,
+            p_city: values.city || null,
+            p_pincode: values.pincode || null,
           });
 
           if (dbError) {
             console.error('Database error:', dbError);
             throw dbError;
           }
+
+          // Citizens profile is created inside the RPC (SECURITY DEFINER). No client-side insert needed.
         }
 
         setSuccess(true);
@@ -220,6 +246,36 @@ const Register = () => {
           <Grid item xs={12}>
             <TextField
               fullWidth
+              id="username"
+              name="username"
+              label="Username"
+              value={formik.values.username}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.username && Boolean(formik.errors.username)}
+              helperText={formik.touched.username && formik.errors.username}
+              disabled={isLoading}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              id="citizenId"
+              name="citizenId"
+              label="Citizen ID"
+              value={formik.values.citizenId}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.citizenId && Boolean(formik.errors.citizenId)}
+              helperText={formik.touched.citizenId && formik.errors.citizenId}
+              disabled={isLoading}
+            />
+          </Grid>
+          
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
               id="email"
               name="email"
               label="Email"
@@ -286,6 +342,55 @@ const Register = () => {
               ))}
             </TextField>
           </Grid>
+          
+          {formik.values.role === 'citizen' && (
+            <>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  id="address"
+                  name="address"
+                  label="Address"
+                  multiline
+                  minRows={2}
+                  value={formik.values.address}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.address && Boolean(formik.errors.address)}
+                  helperText={formik.touched.address && formik.errors.address}
+                  disabled={isLoading}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  id="city"
+                  name="city"
+                  label="City"
+                  value={formik.values.city}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.city && Boolean(formik.errors.city)}
+                  helperText={formik.touched.city && formik.errors.city}
+                  disabled={isLoading}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  id="pincode"
+                  name="pincode"
+                  label="Pincode"
+                  value={formik.values.pincode}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.pincode && Boolean(formik.errors.pincode)}
+                  helperText={formik.touched.pincode && formik.errors.pincode}
+                  disabled={isLoading}
+                />
+              </Grid>
+            </>
+          )}
           
           <Grid item xs={12}>
             <Button

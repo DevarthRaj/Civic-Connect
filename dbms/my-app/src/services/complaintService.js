@@ -12,8 +12,8 @@ export const getCitizenComplaints = async (citizenId) => {
       priority,
       created_at,
       updated_at,
-      categories (category_name),
-      citizens (citizen_id, user_id)
+      categories:category_id (category_name),
+      citizens:citizen_id (citizen_id, user_id)
     `)
     .eq("citizen_id", citizenId)
     .order("created_at", { ascending: false });
@@ -34,8 +34,8 @@ export const getAllComplaints = async () => {
       priority,
       created_at,
       updated_at,
-      categories (category_name),
-      citizens (citizen_id, user_id)
+       categories:category_id (category_name),
+      citizens:citizen_id (citizen_id, user_id)
     `)
     .order("created_at", { ascending: false });
 
@@ -55,8 +55,8 @@ export const getComplaintById = async (complaintId) => {
       priority,
       created_at,
       updated_at,
-      categories (category_name),
-      citizens (citizen_id, user_id)
+      categories:category_id!inner (category_name),
+      citizens:citizen_id (citizen_id, user_id)
     `)
     .eq("complaint_id", complaintId)
     .single();
@@ -66,20 +66,67 @@ export const getComplaintById = async (complaintId) => {
 };
 
 // File a new complaint
-export const fileComplaint = async (complaintData) => {
+export const fileComplaint = async (values,citizenId,departmentId) => {
+  const { category, location, description, photo, title } = values
+
+  // Get the category info to determine priority
+  const { data: categoryData, error: catError } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('category_name', category)
+    .single()
+
+  if (catError) throw catError
+
+  const priority = categoryData.priority || 'Medium' // default to Medium if not set
+
+  // Upload photo if exists
+  let photo_url = null
+  if (photo) {
+    const fileExt = photo.name.split('.').pop()
+    const fileName = `${Date.now()}.${fileExt}`
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('complaint_photos')
+      .upload(fileName, photo)
+
+    if (uploadError) throw uploadError
+
+    const { publicUrl } = supabase.storage
+      .from('complaint_photos')
+      .getPublicUrl(fileName)
+    photo_url = publicUrl
+  }
+
+  // Insert complaint
   const { data, error } = await supabase
-    .from("complaints")
-    .insert([complaintData])
+    .from('complaints')
+    .insert([
+      {
+        citizen_id: citizenId, 
+        category_id: categoryData.category_id,
+        title: title, 
+        location,
+        description,
+        photo_url,
+        priority,
+        status: "pending",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    ])
     .select();
 
-  if (error) throw error;
-  return data[0];
-};
+  if (error) throw error
+
+  return data
+}
 
 export const getCategories = async () => {
   const { data, error } = await supabase
     .from("categories")
-    .select("category_id, category_name, description");
+    .select('*')
+    .order("category_name",{ascending: true}
+    );
 
   if (error) throw error;
   return data;

@@ -152,29 +152,6 @@ const Dashboard = () => {
             )}
           </Paper>
         </Grid>
-
-        {/* Quick Actions */}
-        <Grid item xs={12} md={4}>
-          <Paper elevation={3} sx={{ p: 3 }}>
-            <Typography variant="h6" mb={2}>Quick Actions</Typography>
-            <Grid container spacing={2}>
-              {[
-                { label: "View Complaints", action: () => navigate("/officer/complaints") },
-                { label: "Department Reports", action: () => navigate("/officer/reports") },
-              ].map((qa, index) => (
-                <Grid item xs={12} key={index}>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={qa.action}
-                  >
-                    {qa.label}
-                  </Button>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
-        </Grid>
       </Grid>
     </Box>
   );
