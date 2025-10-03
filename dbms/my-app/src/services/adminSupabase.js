@@ -98,5 +98,56 @@ export const adminOperations = {
       .select('*')
     
     return { data, error }
+  },
+
+  // User management operations
+  updateUser: async (userId, userData) => {
+    const { data, error } = await adminSupabase
+      .from('users')
+      .update(userData)
+      .eq('user_id', userId)
+      .select()
+    
+    return { data, error }
+  },
+
+  deleteUser: async (userId) => {
+    const { data, error } = await adminSupabase
+      .from('users')
+      .delete()
+      .eq('user_id', userId)
+    
+    return { data, error }
+  },
+
+  // Department management operations
+  updateDepartment: async (deptId, deptData) => {
+    const { data, error } = await adminSupabase
+      .from('departments')
+      .update(deptData)
+      .eq('department_id', deptId)
+      .select()
+    
+    return { data, error }
+  },
+
+  deleteDepartment: async (deptId) => {
+    const { data, error } = await adminSupabase
+      .from('departments')
+      .delete()
+      .eq('department_id', deptId)
+    
+    return { data, error }
+  },
+
+  // Category management operations
+  updateCategory: async (categoryId, categoryData) => {
+    const { data, error } = await adminSupabase
+      .from('categories')
+      .update(categoryData)
+      .eq('category_id', categoryId)
+      .select()
+    
+    return { data, error }
   }
 }

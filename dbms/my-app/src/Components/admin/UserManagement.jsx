@@ -12,8 +12,8 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon
 } from '@mui/icons-material';
-import { usersApi } from '../../services/database';
-import { auth, supabase } from '../../services/supabase';
+import { supabase } from '../../services/supabase';
+import { adminOperations } from '../../services/adminSupabase';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -46,7 +46,7 @@ const UserManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await usersApi.getAll();
+      const { data, error } = await adminOperations.getAllUsers();
       if (error) throw error;
       setUsers(data || []);
     } catch (err) {
@@ -57,117 +57,49 @@ const UserManagement = () => {
     }
   };
 
+  // Load users on component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   // Handle user creation/update
   const handleSaveUser = async (userData) => {
-    console.log('Starting user creation with data:', userData);
-    
     try {
       if (selectedUser?.user_id) {
-        // Update existing user
-        const { error } = await usersApi.update(selectedUser.user_id, {
+        // Update existing user - we'll need to add this to adminOperations
+        const { error } = await adminOperations.updateUser(selectedUser.user_id, {
           name: userData.name,
           role: userData.role
         });
         if (error) throw error;
         setSuccess('User updated successfully');
       } else {
-        console.log('Attempting to create new user in Auth...');
-        
-        // Create new user with email confirmation
-        const { data, error } = await supabase.auth.signUp({
-          email: userData.email,
-          password: 'Temporary@123', // Using a stronger temporary password
-          options: {
-            data: {
-              name: userData.name,
-              role: userData.role || 'citizen',
-              // Add any additional user metadata here
-            },
-            emailRedirectTo: window.location.origin + '/auth/callback'
-          }
-        });
-
-        console.log('Auth response:', { data, error });
-        
-        if (error) {
-          console.error('Auth error details:', error);
-          throw error;
-        }
-        
-        // Check if email confirmation is required
-        if (data.user && data.user.identities && data.user.identities.length === 0) {
-          console.log('Email confirmation required');
-          setSuccess('Confirmation email sent. Please check your inbox.');
-        } else {
-          console.log('User created without email confirmation');
-          setSuccess('User created successfully');
-        }
-        
-        // Add user to your custom users table
-        if (data.user) {
-          console.log('Attempting to add user to database...');
-          const { data: userData, error: dbError } = await supabase
-            .from('users')
-            .insert([
-              {
-                user_id: data.user.id,
-                email: userData.email,
-                name: userData.name,
-                role: userData.role || 'citizen',
-                created_at: new Date().toISOString()
-              }
-            ])
-            .select();
-            
-          console.log('Database insert result:', { userData, dbError });
-          
-          if (dbError) {
-            console.error('Database error details:', dbError);
-            // Check if it's a duplicate key error (user already exists)
-            if (dbError.code === '23505') {
-              console.log('User already exists in database, updating instead...');
-              const { error: updateError } = await supabase
-                .from('users')
-                .update({
-                  name: userData.name,
-                  role: userData.role || 'citizen',
-                  updated_at: new Date().toISOString()
-                })
-                .eq('email', userData.email);
-                
-              if (updateError) {
-                console.error('Update error:', updateError);
-                throw updateError;
-              }
-            } else {
-              throw dbError;
-            }
-          }
-        }
+        // Create new user
+        const { data, error } = await adminOperations.createUser(userData);
+        if (error) throw error;
+        setSuccess('User created successfully');
       }
       
       // Refresh the users list
-      console.log('Refreshing users list...');
       await fetchUsers();
       handleCloseDialog();
       
     } catch (err) {
-      console.error('Error in handleSaveUser:', {
-        message: err.message,
-        code: err.code,
-        details: err.details,
-        hint: err.hint,
-        error: err
-      });
+      console.error('Error in handleSaveUser:', err);
       setError(err.message || 'Error saving user');
     }
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedUser(null);
   };
 
   // Handle user deletion
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        const { error } = await usersApi.delete(userId);
+        const { error } = await adminOperations.deleteUser(userId);
         if (error) throw error;
         setSuccess('User deleted successfully');
         await fetchUsers(); // Refresh the list
@@ -261,7 +193,15 @@ const UserManagement = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => (
+            {users
+              .filter(user => {
+                const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesFilter = filter === 'all' || user.role === filter;
+                return matchesSearch && matchesFilter;
+              })
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((user) => (
               <TableRow key={user.user_id}>
                 <TableCell>
                   <Box display="flex" alignItems="center">
@@ -316,6 +256,24 @@ const UserManagement = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={users.filter(user => {
+          const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchesFilter = filter === 'all' || user.role === filter;
+          return matchesSearch && matchesFilter;
+        }).length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={(event, newPage) => setPage(newPage)}
+        onRowsPerPageChange={(event) => {
+          setRowsPerPage(parseInt(event.target.value, 10));
+          setPage(0);
+        }}
+      />
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Paper, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, TextField, Button, IconButton,
@@ -28,10 +28,32 @@ import {
   Print as PrintIcon,
   Share as ShareIcon
 } from '@mui/icons-material';
+import { adminOperations } from '../../services/adminSupabase';
 
 const ComplaintOversight = () => {
-  // Mock data
-  const complaints = [
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
+
+  const fetchComplaints = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await adminOperations.getAllComplaints();
+      if (error) throw error;
+      setComplaints(data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Mock data for fallback (removed duplicate declaration)
+  const mockComplaints = [
     {
       id: 'CMP-1001',
       title: 'Garbage not collected',
