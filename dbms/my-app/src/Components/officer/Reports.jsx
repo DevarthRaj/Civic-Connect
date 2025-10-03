@@ -18,7 +18,10 @@ const OfficerReports = () => {
 
   useEffect(() => {
     const fetchReportData = async () => {
-      const { data, error } = await supabase.from('complaints').select('status, created_at, categories(category_name)');
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('status, created_at, categories(category_name)');
+
       if (error) {
         console.error(error.message);
         return;
@@ -55,6 +58,20 @@ const OfficerReports = () => {
     alert(`Exporting as ${type} (to be implemented)`);
   };
 
+  // Helper component for conditional rendering
+  const ChartWrapper = ({ title, data, children }) => (
+    <Paper sx={{ p: 2, textAlign: 'center' }}>
+      <Typography variant="h6" gutterBottom>{title}</Typography>
+      {data.length === 0 ? (
+        <Typography color="text.secondary">No data available</Typography>
+      ) : (
+        <ResponsiveContainer width="100%" height={250}>
+          {children}
+        </ResponsiveContainer>
+      )}
+    </Paper>
+  );
+
   return (
     <Box p={3}>
       <Button startIcon={<ArrowBack />} onClick={() => window.history.back()} sx={{ mb: 2 }}>
@@ -62,55 +79,50 @@ const OfficerReports = () => {
       </Button>
       <Typography variant="h4" gutterBottom>Department Reports</Typography>
       <Divider sx={{ mb: 3 }} />
+
       <Grid container spacing={4}>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Complaints by Status</Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                  {statusData.map((entry, idx) => (
-                    <Cell key={`cell-status-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </Paper>
+          <ChartWrapper title="Complaints by Status" data={statusData}>
+            <PieChart>
+              <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                {statusData.map((entry, idx) => (
+                  <Cell key={`cell-status-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ChartWrapper>
         </Grid>
+
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Complaints by Category</Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                  {categoryData.map((entry, idx) => (
-                    <Cell key={`cell-cat-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </Paper>
+          <ChartWrapper title="Complaints by Category" data={categoryData}>
+            <PieChart>
+              <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                {categoryData.map((entry, idx) => (
+                  <Cell key={`cell-cat-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ChartWrapper>
         </Grid>
+
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Complaints by Month</Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={monthData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="complaints" fill="#0088FE" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Paper>
+          <ChartWrapper title="Complaints by Month" data={monthData}>
+            <BarChart data={monthData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="complaints" fill="#0088FE" />
+            </BarChart>
+          </ChartWrapper>
         </Grid>
       </Grid>
+
       <Box mt={4} display="flex" gap={2}>
         <Button variant="contained" color="primary" startIcon={<SaveAlt />} onClick={() => handleExport('CSV')}>
           Export to CSV
