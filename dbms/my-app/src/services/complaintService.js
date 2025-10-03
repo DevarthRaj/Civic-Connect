@@ -1,4 +1,6 @@
 import { supabase } from "./supabase";
+const { data: { user }, error } = await supabase.auth.getUser();
+console.log(user?.id); // should not be null
 
 // Get complaints for a specific citizen
 export const getCitizenComplaints = async (citizenId) => {
