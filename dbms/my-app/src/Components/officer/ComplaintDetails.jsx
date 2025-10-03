@@ -1,36 +1,76 @@
-import React, { useState } from 'react';
-import { Box, Typography, Paper, Button, Divider, Chip, TextField, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import {
+  Box, Typography, Paper, Button, Divider, Chip,
+  TextField, MenuItem, Select, FormControl, InputLabel
+} from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-
-// Mock data
-const complaint = {
-  id: 'CMP-1001',
-  citizen: 'John Doe',
-  category: 'Sanitation',
-  status: 'Pending',
-  createdAt: '2023-09-01',
-  description: 'Garbage not collected for 3 days.',
-  updates: [
-    { status: 'Pending', note: 'Complaint filed', date: '2023-09-01', officer: 'System' },
-    { status: 'In Progress', note: 'Assigned to officer', date: '2023-09-02', officer: 'Admin' }
-  ]
-};
+import { supabase } from '../../services/supabase';
 
 const OfficerComplaintDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState(complaint.status);
+  const [complaint, setComplaint] = useState(null);
+  const [status, setStatus] = useState('');
   const [note, setNote] = useState('');
-  const [updates, setUpdates] = useState(complaint.updates);
+  const [updates, setUpdates] = useState([]);
 
-  const handleSave = () => {
+  useEffect(() => {
+    const fetchComplaint = async () => {
+      const { data, error } = await supabase
+        .from('complaints')
+        .select(`
+          complaint_id,
+          title,
+          description,
+          status,
+          created_at,
+          categories(category_name),
+          citizens(full_name),
+          updates(status, note, created_at, officer)
+        `)
+        .eq('complaint_id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching complaint:', error.message);
+      } else {
+        setComplaint(data);
+        setStatus(data.status);
+        setUpdates(data.updates || []);
+      }
+    };
+
+    fetchComplaint();
+  }, [id]);
+
+  const handleSave = async () => {
     if (!note) return;
-    setUpdates([
-      ...updates,
-      { status, note, date: new Date().toISOString().slice(0, 10), officer: 'You' }
-    ]);
+
+    const newUpdate = {
+      status,
+      note,
+      created_at: new Date().toISOString(),
+      officer: 'You',
+    };
+
+    setUpdates([...updates, newUpdate]);
     setNote('');
+
+    // Update in DB
+    await supabase
+      .from('complaints')
+      .update({ status })
+      .eq('complaint_id', id);
+
+    await supabase.from('updates').insert([{
+      complaint_id: id,
+      status,
+      note,
+      officer: 'Officer User'
+    }]);
   };
+
+  if (!complaint) return <Typography>Loading...</Typography>;
 
   return (
     <Box p={3}>
@@ -40,11 +80,13 @@ const OfficerComplaintDetails = () => {
       <Typography variant="h4" gutterBottom>Complaint Details</Typography>
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box mb={2}>
-          <Typography variant="subtitle1">Complaint ID: <b>{complaint.id}</b></Typography>
-          <Typography variant="subtitle1">Citizen: <b>{complaint.citizen}</b></Typography>
-          <Typography variant="subtitle1">Category: <b>{complaint.category}</b></Typography>
-          <Typography variant="subtitle1">Status: <Chip label={status} color={status === 'Resolved' ? 'success' : status === 'In Progress' ? 'warning' : 'default'} size="small" /></Typography>
-          <Typography variant="subtitle1">Created At: <b>{complaint.createdAt}</b></Typography>
+          <Typography variant="subtitle1">Complaint ID: <b>{complaint.complaint_id}</b></Typography>
+          <Typography variant="subtitle1">Citizen: <b>{complaint.citizens?.full_name}</b></Typography>
+          <Typography variant="subtitle1">Category: <b>{complaint.categories?.category_name}</b></Typography>
+          <Typography variant="subtitle1">
+            Status: <Chip label={status} color={status === 'Resolved' ? 'success' : status === 'In Progress' ? 'warning' : 'default'} size="small" />
+          </Typography>
+          <Typography variant="subtitle1">Created At: <b>{new Date(complaint.created_at).toLocaleDateString()}</b></Typography>
         </Box>
         <Divider sx={{ my: 2 }} />
         <Typography variant="body1" mb={2}>{complaint.description}</Typography>
@@ -67,7 +109,7 @@ const OfficerComplaintDetails = () => {
         {updates.map((u, idx) => (
           <Paper key={idx} sx={{ p: 1, mb: 1 }}>
             <Typography variant="body2"><b>{u.status}</b> - {u.note}</Typography>
-            <Typography variant="caption" color="text.secondary">{u.date} by {u.officer}</Typography>
+            <Typography variant="caption" color="text.secondary">{new Date(u.created_at).toLocaleDateString()} by {u.officer}</Typography>
           </Paper>
         ))}
       </Paper>

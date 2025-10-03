@@ -1,24 +1,49 @@
-import React, { useState } from 'react';
-import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import {
+  Box, Typography, Paper, Button,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  TextField, Select, MenuItem, InputLabel, FormControl
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-
-// Mock data
-const complaints = [
-  { id: 'CMP-1001', citizen: 'John Doe', category: 'Sanitation', status: 'Pending', createdAt: '2023-09-01' },
-  { id: 'CMP-1002', citizen: 'Jane Smith', category: 'Roads', status: 'In Progress', createdAt: '2023-09-02' },
-  { id: 'CMP-1003', citizen: 'Bob Brown', category: 'Water', status: 'Resolved', createdAt: '2023-09-03' },
-];
+import { supabase } from '../../services/supabase';
 
 const ComplaintManagement = () => {
   const navigate = useNavigate();
+  const [complaints, setComplaints] = useState([]);
   const [status, setStatus] = useState('');
   const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
 
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      const { data, error } = await supabase
+        .from('complaints')
+        .select(`
+          complaint_id,
+          title,
+          status,
+          created_at,
+          categories(category_name),
+          citizens(full_name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching complaints:', error.message);
+      } else {
+        setComplaints(data);
+      }
+    };
+
+    fetchComplaints();
+  }, []);
+
   const filteredComplaints = complaints.filter(c =>
     (!status || c.status === status) &&
-    (!category || c.category === category) &&
-    (!search || c.citizen.toLowerCase().includes(search.toLowerCase()) || c.id.includes(search))
+    (!category || c.categories?.category_name === category) &&
+    (!search ||
+      c.citizens?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      c.complaint_id.toString().includes(search))
   );
 
   return (
@@ -26,8 +51,11 @@ const ComplaintManagement = () => {
       <Button onClick={() => navigate('/officer')} sx={{ mb: 2 }}>
         Back to Officer Dashboard
       </Button>
-      <Typography variant="h4" gutterBottom>Complaint Management</Typography>
+      <Typography variant="h4" gutterBottom>
+        Complaint Management
+      </Typography>
       <Paper sx={{ p: 2, mb: 2 }}>
+        {/* Filters */}
         <Box display="flex" gap={2} mb={2}>
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Status</InputLabel>
@@ -45,10 +73,18 @@ const ComplaintManagement = () => {
               <MenuItem value="Sanitation">Sanitation</MenuItem>
               <MenuItem value="Roads">Roads</MenuItem>
               <MenuItem value="Water">Water</MenuItem>
+              <MenuItem value="Electricity">Electricity</MenuItem>
             </Select>
           </FormControl>
-          <TextField size="small" label="Search" value={search} onChange={e => setSearch(e.target.value)} />
+          <TextField
+            size="small"
+            label="Search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </Box>
+
+        {/* Table */}
         <TableContainer>
           <Table>
             <TableHead>
@@ -61,15 +97,28 @@ const ComplaintManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredComplaints.map(row => (
-                <TableRow key={row.id} hover style={{ cursor: 'pointer' }} onClick={() => navigate(`/officer/complaints/${row.id}`)}>
-                  <TableCell>{row.id}</TableCell>
-                  <TableCell>{row.citizen}</TableCell>
-                  <TableCell>{row.category}</TableCell>
-                  <TableCell>{row.status}</TableCell>
-                  <TableCell>{row.createdAt}</TableCell>
+              {filteredComplaints.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    No complaints found
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredComplaints.map(row => (
+                  <TableRow
+                    key={row.complaint_id}
+                    hover
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/officer/complaints/${row.complaint_id}`)}
+                  >
+                    <TableCell>{row.complaint_id}</TableCell>
+                    <TableCell>{row.citizens?.full_name || 'N/A'}</TableCell>
+                    <TableCell>{row.categories?.category_name || 'N/A'}</TableCell>
+                    <TableCell>{row.status}</TableCell>
+                    <TableCell>{new Date(row.created_at).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

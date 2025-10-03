@@ -1,36 +1,76 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Paper, Button, Grid, Divider
 } from '@mui/material';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 import { SaveAlt, ArrowBack } from '@mui/icons-material';
+import { supabase } from '../../services/supabase';
 
-// Mock data for demonstration
-const statusData = [
-  { name: 'Resolved', value: 40 },
-  { name: 'In Progress', value: 25 },
-  { name: 'Pending', value: 15 },
-  { name: 'Rejected', value: 5 }
-];
-const categoryData = [
-  { name: 'Sanitation', value: 20 },
-  { name: 'Roads', value: 15 },
-  { name: 'Water', value: 10 },
-  { name: 'Electricity', value: 8 }
-];
-const monthData = [
-  { month: 'Jan', complaints: 10 },
-  { month: 'Feb', complaints: 15 },
-  { month: 'Mar', complaints: 20 },
-  { month: 'Apr', complaints: 18 }
-];
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const OfficerReports = () => {
-  // Export handlers (mock)
+  const [statusData, setStatusData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [monthData, setMonthData] = useState([]);
+
+  useEffect(() => {
+    const fetchReportData = async () => {
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('status, created_at, categories(category_name)');
+
+      if (error) {
+        console.error(error.message);
+        return;
+      }
+
+      // Status aggregation
+      const statusCounts = {};
+      data.forEach(c => {
+        statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
+      });
+      setStatusData(Object.entries(statusCounts).map(([name, value]) => ({ name, value })));
+
+      // Category aggregation
+      const categoryCounts = {};
+      data.forEach(c => {
+        const cat = c.categories?.category_name || 'Unknown';
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      });
+      setCategoryData(Object.entries(categoryCounts).map(([name, value]) => ({ name, value })));
+
+      // Monthly aggregation
+      const monthCounts = {};
+      data.forEach(c => {
+        const month = new Date(c.created_at).toLocaleString('default', { month: 'short' });
+        monthCounts[month] = (monthCounts[month] || 0) + 1;
+      });
+      setMonthData(Object.entries(monthCounts).map(([month, complaints]) => ({ month, complaints })));
+    };
+
+    fetchReportData();
+  }, []);
+
   const handleExport = (type) => {
-    alert(`Exporting as ${type}`);
+    alert(`Exporting as ${type} (to be implemented)`);
   };
+
+  // Helper component for conditional rendering
+  const ChartWrapper = ({ title, data, children }) => (
+    <Paper sx={{ p: 2, textAlign: 'center' }}>
+      <Typography variant="h6" gutterBottom>{title}</Typography>
+      {data.length === 0 ? (
+        <Typography color="text.secondary">No data available</Typography>
+      ) : (
+        <ResponsiveContainer width="100%" height={250}>
+          {children}
+        </ResponsiveContainer>
+      )}
+    </Paper>
+  );
 
   return (
     <Box p={3}>
@@ -39,55 +79,50 @@ const OfficerReports = () => {
       </Button>
       <Typography variant="h4" gutterBottom>Department Reports</Typography>
       <Divider sx={{ mb: 3 }} />
+
       <Grid container spacing={4}>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Complaints by Status</Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                  {statusData.map((entry, idx) => (
-                    <Cell key={`cell-status-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </Paper>
+          <ChartWrapper title="Complaints by Status" data={statusData}>
+            <PieChart>
+              <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                {statusData.map((entry, idx) => (
+                  <Cell key={`cell-status-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ChartWrapper>
         </Grid>
+
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Complaints by Category</Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                  {categoryData.map((entry, idx) => (
-                    <Cell key={`cell-cat-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </Paper>
+          <ChartWrapper title="Complaints by Category" data={categoryData}>
+            <PieChart>
+              <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                {categoryData.map((entry, idx) => (
+                  <Cell key={`cell-cat-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ChartWrapper>
         </Grid>
+
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Complaints by Month</Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={monthData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="complaints" fill="#0088FE" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Paper>
+          <ChartWrapper title="Complaints by Month" data={monthData}>
+            <BarChart data={monthData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="complaints" fill="#0088FE" />
+            </BarChart>
+          </ChartWrapper>
         </Grid>
       </Grid>
+
       <Box mt={4} display="flex" gap={2}>
         <Button variant="contained" color="primary" startIcon={<SaveAlt />} onClick={() => handleExport('CSV')}>
           Export to CSV
