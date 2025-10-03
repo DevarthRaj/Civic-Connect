@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Typography, 
-  Grid, 
-  Card, 
-  CardContent, 
-  Button, 
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
   Paper,
   Divider,
   CircularProgress,
@@ -20,13 +20,7 @@ import {
   List as ListIcon,
   Error as ErrorIcon
 } from '@mui/icons-material';
-
-// Mock data - in a real app, this would come from an API
-const mockComplaints = [
-  { id: 1, category: 'Garbage Collection', status: 'In Progress', date: '2023-10-15', description: 'Garbage not collected for 3 days' },
-  { id: 2, category: 'Road Repair', status: 'Resolved', date: '2023-10-10', description: 'Pothole on Main Street' },
-  { id: 3, category: 'Water Supply', status: 'Pending', date: '2023-10-05', description: 'Low water pressure' },
-];
+import { getAllComplaints } from "../../services/complaintService"; // corrected import
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -41,20 +35,18 @@ const Dashboard = () => {
   const [recentComplaints, setRecentComplaints] = useState([]);
 
   useEffect(() => {
-    // Simulate API call
     const fetchData = async () => {
       try {
-        // In a real app, this would be an actual API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Calculate stats
-        const total = mockComplaints.length;
-        const inProgress = mockComplaints.filter(c => c.status === 'In Progress').length;
-        const resolved = mockComplaints.filter(c => c.status === 'Resolved').length;
-        const pending = mockComplaints.filter(c => c.status === 'Pending').length;
-        
+        // Use the named export getAllComplaints() instead of complaintService.getAllComplaints()
+        const complaints = await getAllComplaints();
+
+        const total = complaints.length;
+        const inProgress = complaints.filter(c => c.status === 'In Progress').length;
+        const resolved = complaints.filter(c => c.status === 'Resolved').length;
+        const pending = complaints.filter(c => c.status === 'Pending').length;
+
         setStats({ total, inProgress, resolved, pending });
-        setRecentComplaints(mockComplaints.slice(0, 3));
+        setRecentComplaints(complaints.slice(0, 3));
         setLoading(false);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
@@ -62,7 +54,6 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -230,23 +221,23 @@ const Dashboard = () => {
       <Box sx={{ mt: 4 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6">Recent Complaints</Typography>
-          <Button 
-            color="primary" 
+          <Button
+            color="primary"
             onClick={() => navigate('/my-complaints')}
             size="small"
           >
             View All
           </Button>
         </Box>
-        
+
         {recentComplaints.length > 0 ? (
           <Paper elevation={2}>
             {recentComplaints.map((complaint, index) => (
               <React.Fragment key={complaint.id}>
-                <Box 
-                  sx={{ 
-                    p: 2, 
-                    display: 'flex', 
+                <Box
+                  sx={{
+                    p: 2,
+                    display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     cursor: 'pointer',
@@ -274,18 +265,18 @@ const Dashboard = () => {
                         borderRadius: 1,
                         fontSize: '0.75rem',
                         fontWeight: 'medium',
-                        backgroundColor: 
-                          complaint.status === 'Resolved' 
-                            ? 'success.light' 
+                        backgroundColor:
+                          complaint.status === 'Resolved'
+                            ? 'success.light'
                             : complaint.status === 'In Progress'
-                            ? 'warning.light'
-                            : 'info.light',
-                        color: 
-                          complaint.status === 'Resolved' 
-                            ? 'success.dark' 
+                              ? 'warning.light'
+                              : 'info.light',
+                        color:
+                          complaint.status === 'Resolved'
+                            ? 'success.dark'
                             : complaint.status === 'In Progress'
-                            ? 'warning.dark'
-                            : 'info.dark',
+                              ? 'warning.dark'
+                              : 'info.dark',
                       }}
                     >
                       {complaint.status}
@@ -304,9 +295,9 @@ const Dashboard = () => {
             <Typography color="textSecondary">
               You haven't filed any complaints yet.
             </Typography>
-            <Button 
-              variant="text" 
-              color="primary" 
+            <Button
+              variant="text"
+              color="primary"
               onClick={() => navigate('/file-complaint')}
               sx={{ mt: 1 }}
             >

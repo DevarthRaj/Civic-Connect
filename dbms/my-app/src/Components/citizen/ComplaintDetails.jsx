@@ -3,96 +3,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Box, Typography, Paper, Grid, Button, Divider, Chip, CircularProgress,
   Alert, Avatar, List, ListItem, ListItemAvatar, ListItemText, TextField,
-  Dialog, DialogTitle, DialogContent, DialogActions, Rating, Snackbar
+  Snackbar, IconButton
 } from '@mui/material';
-import {
-  ArrowBack, Comment, Person, AccessTime, LocationOn, Category,
-  Description, Image, CheckCircle, Close, Star, StarBorder, Edit
-} from '@mui/icons-material';
-
-// Simulate fetching complaint by ID (replace with real API call)
-const fetchComplaintById = async (complaintId) => {
-  // Simulate different complaints for demo
-  const mockComplaints = [
-    {
-      id: 'CMP-1001',
-      title: 'Garbage not collected',
-      category: 'Garbage Collection',
-      department: 'Sanitation',
-      location: '123 Main St',
-      description: 'Garbage has not been collected for 3 days.',
-      status: 'Resolved',
-      priority: 'High',
-      dateCreated: '2023-10-15T10:30:00',
-      lastUpdated: '2023-10-16T14:20:00',
-      assignedTo: 'John Smith',
-      images: ['https://via.placeholder.com/800x400?text=Garbage+Not+Collected'],
-      updates: [
-        {
-          id: 1,
-          type: 'status',
-          title: 'Status Updated',
-          description: 'Complaint registered',
-          date: '2023-10-15T11:15:00',
-          user: 'System'
-        },
-        {
-          id: 2,
-          type: 'status',
-          title: 'Assigned',
-          description: 'Assigned to John Smith',
-          date: '2023-10-15T12:00:00',
-          user: 'Admin'
-        },
-        {
-          id: 3,
-          type: 'status',
-          title: 'Resolved',
-          description: 'Complaint resolved by John Smith',
-          date: '2023-10-16T14:00:00',
-          user: 'John Smith'
-        }
-      ]
-    },
-    {
-      id: 'CMP-1002',
-      title: 'Street light not working',
-      category: 'Electricity',
-      department: 'Electrical',
-      location: '456 Park Ave',
-      description: 'Street light has been out for a week.',
-      status: 'In Progress',
-      priority: 'Medium',
-      dateCreated: '2023-10-10T09:00:00',
-      lastUpdated: '2023-10-12T10:00:00',
-      assignedTo: 'Jane Doe',
-      images: [],
-      updates: [
-        {
-          id: 1,
-          type: 'status',
-          title: 'Status Updated',
-          description: 'Complaint registered',
-          date: '2023-10-10T09:15:00',
-          user: 'System'
-        },
-        {
-          id: 2,
-          type: 'status',
-          title: 'Assigned',
-          description: 'Assigned to Jane Doe',
-          date: '2023-10-10T10:00:00',
-          user: 'Admin'
-        }
-      ]
-    }
-  ];
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockComplaints.find(c => c.id === complaintId));
-    }, 500);
-  });
-};
+import { ArrowBack, Comment, Person, CheckCircle, Close } from '@mui/icons-material';
+import { getComplaintById, addFeedback } from "../../services/complaintService"; 
 
 const statusColors = {
   'Pending': 'default',
@@ -112,61 +26,38 @@ const ComplaintDetails = () => {
   useEffect(() => {
     const fetchComplaint = async () => {
       try {
-        const data = await fetchComplaintById(complaintId);
+        const data = await getComplaintById(complaintId);
         setComplaint(data);
-        setLoading(false);
       } catch (err) {
-        console.error('Error:', err);
+        console.error('Error fetching complaint', err);
+      } finally {
         setLoading(false);
       }
     };
     fetchComplaint();
   }, [complaintId]);
 
-  const handleCommentSubmit = () => {
+  const handleCommentSubmit = async () => {
     if (!comment.trim()) return;
-    
-    const newComment = {
-      id: Math.random().toString(36).substr(2, 9),
-      type: 'comment',
-      title: 'New Comment',
-      description: comment,
-      date: new Date().toISOString(),
-      user: 'You'
-    };
-
-    setComplaint(prev => ({
-      ...prev,
-      updates: [newComment, ...prev.updates]
-    }));
-    
-    setComment('');
-    showSnackbar('Comment added successfully', 'success');
+    try {
+      // Using addFeedback since addComment doesn't exist
+      await addFeedback({ complaint_id: complaint.complaint_id, feedback: comment });
+      const updatedComplaint = await getComplaintById(complaintId);
+      setComplaint(updatedComplaint);
+      setComment('');
+      showSnackbar('Comment added successfully', 'success');
+    } catch (err) {
+      console.error(err);
+      showSnackbar('Failed to add comment', 'error');
+    }
   };
 
-  const showSnackbar = (message, severity) => {
-    setSnackbar({ open: true, message, severity });
-  };
+  const showSnackbar = (message, severity) => setSnackbar({ open: true, message, severity });
+  const handleCloseSnackbar = () => setSnackbar(prev => ({ ...prev, open: false }));
+  const formatDate = (dateString) => new Date(dateString).toLocaleString();
 
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (!complaint) {
-    return <Alert severity="error">Complaint not found</Alert>;
-  }
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
-  };
+  if (loading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+  if (!complaint) return <Alert severity="error">Complaint not found</Alert>;
 
   return (
     <Box p={2}>
@@ -175,7 +66,7 @@ const ComplaintDetails = () => {
           Back to My Complaints
         </Button>
         <Typography variant="h5" ml={2}>
-          Complaint #{complaint.id}
+          Complaint #{complaint.complaint_id}
         </Typography>
       </Box>
 
@@ -190,70 +81,58 @@ const ComplaintDetails = () => {
                 size="small"
               />
             </Box>
-            
+
             <Typography variant="body1" paragraph>
               {complaint.description}
             </Typography>
-            
-            {complaint.images?.length > 0 && (
-              <Box my={2}>
-                <img 
-                  src={complaint.images[0]} 
-                  alt="Complaint" 
-                  style={{ maxWidth: '100%', borderRadius: 4 }}
-                />
-              </Box>
-            )}
-            
+
             <Divider sx={{ my: 2 }} />
-            
+
             <Grid container spacing={2}>
               <Grid item xs={6} sm={3}>
                 <Typography variant="caption" color="textSecondary">Category</Typography>
-                <Typography>{complaint.category}</Typography>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="caption" color="textSecondary">Department</Typography>
-                <Typography>{complaint.department}</Typography>
+                <Typography>{complaint.categories?.category_name || '-'}</Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
                 <Typography variant="caption" color="textSecondary">Reported On</Typography>
-                <Typography>{formatDate(complaint.dateCreated)}</Typography>
+                <Typography>{formatDate(complaint.created_at)}</Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="caption" color="textSecondary">Assigned To</Typography>
-                <Typography>{complaint.assignedTo || 'Not assigned'}</Typography>
+                <Typography variant="caption" color="textSecondary">Last Updated</Typography>
+                <Typography>{formatDate(complaint.updated_at)}</Typography>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Typography variant="caption" color="textSecondary">Priority</Typography>
+                <Chip 
+                  label={complaint.priority} 
+                  color={complaint.priority === 'High' ? 'error' : complaint.priority === 'Medium' ? 'warning' : 'success'} 
+                  size="small"
+                />
               </Grid>
             </Grid>
           </Paper>
 
           <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" mb={2}>Updates</Typography>
+            <Typography variant="h6" mb={2}>Comments / Feedback</Typography>
             <List>
-              {complaint.updates.map((update) => (
-                <ListItem key={update.id} alignItems="flex-start">
+              {complaint.feedback?.map((fb, index) => (
+                <ListItem key={index} alignItems="flex-start">
                   <ListItemAvatar>
-                    <Avatar>
-                      <Person />
-                    </Avatar>
+                    <Avatar><Person /></Avatar>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={update.user}
+                    primary={fb.user_id || 'Anonymous'}
                     secondary={
                       <>
-                        <Typography variant="caption" display="block">
-                          {formatDate(update.date)}
-                        </Typography>
-                        <Typography variant="body2">
-                          {update.description}
-                        </Typography>
+                        <Typography variant="caption" display="block">{formatDate(fb.created_at)}</Typography>
+                        <Typography variant="body2">{fb.feedback}</Typography>
                       </>
                     }
                   />
                 </ListItem>
               ))}
             </List>
-            
+
             <Box mt={3}>
               <TextField
                 fullWidth
@@ -277,45 +156,24 @@ const ComplaintDetails = () => {
             </Box>
           </Paper>
         </Grid>
-        
+
         <Grid item xs={12} md={4}>
-          {/* Feedback button if resolved */}
           {complaint.status === 'Resolved' && (
             <Paper elevation={2} sx={{ p: 3, mb: 3, textAlign: 'center' }}>
               <Button
                 variant="contained"
                 color="success"
                 component={Link}
-                to={`/feedback/${complaint.id}`}
+                to={`/feedback/${complaint.complaint_id}`}
                 startIcon={<CheckCircle />}
               >
                 Give Feedback
               </Button>
             </Paper>
           )}
-          
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography variant="h6" mb={2}>Complaint Details</Typography>
-            <Box mb={2}>
-              <Typography variant="caption" color="textSecondary" display="block">Location</Typography>
-              <Typography>{complaint.location}</Typography>
-            </Box>
-            <Box mb={2}>
-              <Typography variant="caption" color="textSecondary" display="block">Priority</Typography>
-              <Chip 
-                label={complaint.priority} 
-                color={complaint.priority === 'High' ? 'error' : 'default'}
-                size="small"
-              />
-            </Box>
-            <Box>
-              <Typography variant="caption" color="textSecondary" display="block">Last Updated</Typography>
-              <Typography>{formatDate(complaint.lastUpdated)}</Typography>
-            </Box>
-          </Paper>
         </Grid>
       </Grid>
-      
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
