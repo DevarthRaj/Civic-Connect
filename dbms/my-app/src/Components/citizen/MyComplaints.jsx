@@ -30,7 +30,7 @@ import {
   Visibility as VisibilityIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { getCitizenComplaints } from '../../services/complaintService';
+import { getUserComplaints } from '../../services/citizenService';
 
 // Status & priority colors
 const statusColors = {
@@ -48,7 +48,7 @@ const priorityColors = {
   High: 'error'
 };
 
-const MyComplaints = ({ citizenId }) => {
+const MyComplaints = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,24 +61,25 @@ const MyComplaints = ({ citizenId }) => {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
 
-  // Fetch complaints for this citizen
+  // Fetch complaints for current user
   const fetchComplaints = async () => {
     try {
       setLoading(true);
-      const data = await getCitizenComplaints(citizenId);
+      const data = await getUserComplaints();
       setComplaints(data);
       setFilteredComplaints(data);
-      setLoading(false);
+      setError('');
     } catch (err) {
       console.error('Error fetching complaints:', err);
       setError('Failed to load complaints. Please try again later.');
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchComplaints();
-  }, [citizenId]);
+  }, []);
 
   // Apply search, filters, sort
   useEffect(() => {

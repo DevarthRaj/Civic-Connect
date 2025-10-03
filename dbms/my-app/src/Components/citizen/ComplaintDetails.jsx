@@ -6,7 +6,7 @@ import {
   Snackbar, IconButton
 } from '@mui/material';
 import { ArrowBack, Comment, Person, CheckCircle, Close } from '@mui/icons-material';
-import { getComplaintById, addFeedback } from "../../services/complaintService"; 
+import { getComplaintById, submitFeedback } from "../../services/citizenService"; 
 
 const statusColors = {
   'Pending': 'default',
@@ -40,12 +40,14 @@ const ComplaintDetails = () => {
   const handleCommentSubmit = async () => {
     if (!comment.trim()) return;
     try {
-      // Using addFeedback since addComment doesn't exist
-      await addFeedback({ complaint_id: complaint.complaint_id, feedback: comment });
+      await submitFeedback(complaint.complaint_id, { 
+        rating: 5, // Default rating, you can add a rating component
+        comments: comment 
+      });
       const updatedComplaint = await getComplaintById(complaintId);
       setComplaint(updatedComplaint);
       setComment('');
-      showSnackbar('Comment added successfully', 'success');
+      showSnackbar('Feedback submitted successfully', 'success');
     } catch (err) {
       console.error(err);
       showSnackbar('Failed to add comment', 'error');

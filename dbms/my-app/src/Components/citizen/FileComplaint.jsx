@@ -7,7 +7,7 @@ import {
 import { ArrowBack as ArrowBackIcon, CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { fileComplaint, getCategories } from "../../services/complaintService";
+import { fileNewComplaint, getCategories } from "../../services/citizenService";
 
 const validationSchema = Yup.object({
   title: Yup.string().required("Title is required"),
@@ -39,10 +39,11 @@ const FileComplaint = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const data = await getCategories(); // Implement in complaintService
+        const data = await getCategories();
         setCategories(data);
       } catch (err) {
         console.error('Failed to fetch categories', err);
+        setError('Failed to load categories. Please refresh the page.');
       }
     };
     fetchCategories();
@@ -61,10 +62,8 @@ const FileComplaint = () => {
       try {
         setIsSubmitting(true);
         setError('');
-        const citizenId = "uuid-of-citizen"; // get from auth/session
-    const departmentId = "uuid-of-department";
 
-        await fileComplaint(values,citizenId,departmentId); // API call to submit complaint
+        await fileNewComplaint(values);
 
         setSubmitSuccess(true);
         formik.resetForm();

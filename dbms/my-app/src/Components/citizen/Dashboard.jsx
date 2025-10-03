@@ -20,7 +20,7 @@ import {
   List as ListIcon,
   Error as ErrorIcon
 } from '@mui/icons-material';
-import { getAllComplaints } from "../../services/complaintService"; 
+import { getUserDashboardStats } from "../../services/citizenService"; 
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -31,26 +31,23 @@ const Dashboard = () => {
     inProgress: 0,
     resolved: 0,
     pending: 0,
+    rejected: 0
   });
   const [recentComplaints, setRecentComplaints] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use the named export getAllComplaints() instead of complaintService.getAllComplaints()
-        const complaints = await getAllComplaints();
-
-        const total = complaints.length;
-        const inProgress = complaints.filter(c => c.status === 'In Progress').length;
-        const resolved = complaints.filter(c => c.status === 'Resolved').length;
-        const pending = complaints.filter(c => c.status === 'Pending').length;
-
-        setStats({ total, inProgress, resolved, pending });
-        setRecentComplaints(complaints.slice(0, 3));
-        setLoading(false);
+        setLoading(true);
+        const dashboardData = await getUserDashboardStats();
+        
+        setStats(dashboardData.stats);
+        setRecentComplaints(dashboardData.recentComplaints);
+        setError(null);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
+      } finally {
         setLoading(false);
       }
     };
@@ -233,7 +230,7 @@ const Dashboard = () => {
         {recentComplaints.length > 0 ? (
           <Paper elevation={2}>
             {recentComplaints.map((complaint, index) => (
-              <React.Fragment key={complaint.id}>
+              <React.Fragment key={complaint.complaint_id}>
                 <Box
                   sx={{
                     p: 2,
@@ -243,17 +240,19 @@ const Dashboard = () => {
                     cursor: 'pointer',
                     '&:hover': { backgroundColor: 'action.hover' }
                   }}
-                  onClick={() => navigate(`/complaint/${complaint.id}`)}
+                  onClick={() => navigate(`/complaint/${complaint.complaint_id}`)}
                 >
                   <Box>
                     <Typography variant="subtitle1">
-                      {complaint.category}
+                      {complaint.categories?.category_name || 'N/A'}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      {complaint.description}
+                      {complaint.description?.length > 100 
+                        ? `${complaint.description.substring(0, 100)}...` 
+                        : complaint.description}
                     </Typography>
                     <Typography variant="caption" color="textSecondary">
-                      {new Date(complaint.date).toLocaleDateString()}
+                      {new Date(complaint.created_at).toLocaleDateString()}
                     </Typography>
                   </Box>
                   <Box>
@@ -270,13 +269,17 @@ const Dashboard = () => {
                             ? 'success.light'
                             : complaint.status === 'In Progress'
                               ? 'warning.light'
-                              : 'info.light',
+                              : complaint.status === 'Rejected'
+                                ? 'error.light'
+                                : 'info.light',
                         color:
                           complaint.status === 'Resolved'
                             ? 'success.dark'
                             : complaint.status === 'In Progress'
                               ? 'warning.dark'
-                              : 'info.dark',
+                              : complaint.status === 'Rejected'
+                                ? 'error.dark'
+                                : 'info.dark',
                       }}
                     >
                       {complaint.status}
