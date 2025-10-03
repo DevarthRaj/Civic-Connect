@@ -10,6 +10,7 @@ import * as Yup from 'yup';
 import { fileComplaint, getCategories } from "../../services/complaintService";
 
 const validationSchema = Yup.object({
+  title: Yup.string().required("Title is required"),
   category: Yup.string().required('Category is required'),
   location: Yup.string().required('Location is required'),
   description: Yup.string()
@@ -49,9 +50,10 @@ const FileComplaint = () => {
 
   const formik = useFormik({
     initialValues: {
-      category: '',
-      location: '',
-      description: '',
+      title: "",
+      category: "",
+      location: "",
+      description: "",
       photo: null,
     },
     validationSchema,
@@ -59,8 +61,10 @@ const FileComplaint = () => {
       try {
         setIsSubmitting(true);
         setError('');
+        const citizenId = "uuid-of-citizen"; // get from auth/session
+    const departmentId = "uuid-of-department";
 
-        await fileComplaint(values); // API call to submit complaint
+        await fileComplaint(values,citizenId,departmentId); // API call to submit complaint
 
         setSubmitSuccess(true);
         formik.resetForm();
@@ -119,7 +123,7 @@ const FileComplaint = () => {
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <form onSubmit={formik.handleSubmit}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth error={formik.touched.category && Boolean(formik.errors.category)} sx={{ mb: 3 }}>
                 <InputLabel id="category-label">Category *</InputLabel>
                 <Select
@@ -133,7 +137,7 @@ const FileComplaint = () => {
                 >
                   <MenuItem value=""><em>Select a category</em></MenuItem>
                   {categories.map((cat) => (
-                    <MenuItem key={cat.id} value={cat.name}>{cat.name} ({cat.department})</MenuItem>
+                    <MenuItem key={cat.category_id} value={cat.category_name}>{cat.category_name} ({cat.description})</MenuItem>
                   ))}
                 </Select>
                 <FormHelperText>{formik.touched.category && formik.errors.category}</FormHelperText>
@@ -146,6 +150,19 @@ const FileComplaint = () => {
                 helperText={(formik.touched.location && formik.errors.location) || 'Enter the exact location of the issue'}
                 sx={{ mb: 3 }}
               />
+              <TextField
+  fullWidth
+  id="title"
+  name="title"
+  label="Title *"
+  value={formik.values.title}
+  onChange={formik.handleChange}
+  onBlur={formik.handleBlur}
+  error={formik.touched.title && Boolean(formik.errors.title)}
+  helperText={formik.touched.title && formik.errors.title}
+  sx={{ mb: 3 }}
+/>
+
 
               <TextField
                 fullWidth id="description" name="description" label="Description *" multiline rows={6}
@@ -172,9 +189,28 @@ const FileComplaint = () => {
                     </Box>
                   ) : (
                     <Box sx={{ position: 'relative' }}>
-                      <Box component="img" src={previewUrl} alt="Preview" sx={{ width: '100%', maxHeight: 300, objectFit: 'contain', borderRadius: 1 }} />
-                      <Button variant="contained" color="error" size="small" onClick={removePhoto} sx={{ position: 'absolute', top: 10, right: 10, minWidth: 'auto', p: 0.5, borderRadius: '50%' }}>×</Button>
-                    </Box>
+  <Box
+    component="img"
+    src={previewUrl}
+    alt="Preview"
+    sx={{ width: '100%', maxHeight: 300, objectFit: 'contain', borderRadius: 1 }}
+  />
+  <IconButton
+    onClick={removePhoto}
+    sx={{
+      position: 'absolute',
+      top: 10,
+      right: 10,
+      backgroundColor: 'error.main',
+      color: 'white',
+      '&:hover': { backgroundColor: 'error.dark' },
+    }}
+    size="small"
+  >
+    ×
+  </IconButton>
+</Box>
+
                   )}
                   {formik.touched.photo && formik.errors.photo && (
                     <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>{formik.errors.photo}</Typography>

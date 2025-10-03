@@ -33,7 +33,7 @@ import ComplaintOversight from './Components/admin/ComplaintOversight';
 import Reports from './Components/admin/Reports';
 
 // Shared Components
-import NotFound from './components/shared/NotFound';
+import NotFound from './Components/shared/NotFound';
 
 // Theme
 const theme = createTheme({
