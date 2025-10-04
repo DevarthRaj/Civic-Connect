@@ -13,9 +13,10 @@ export const getCitizenProfile = async (userId) => {
     .from('citizens')
     .select('*')
     .eq('user_id', userId)
-    .single();
-  
+    .maybeSingle();
+
   if (error) throw error;
+  if (!data) throw new Error('Citizen profile not found');
   return data;
 };
 
@@ -147,11 +148,11 @@ export const fileNewComplaint = async (complaintData) => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data } = supabase.storage
         .from('complaint_photos')
         .getPublicUrl(fileName);
       
-      photo_url = publicUrl;
+      photo_url = data.publicUrl;
     }
 
     // Insert complaint
@@ -221,24 +222,27 @@ export const getComplaintById = async (complaintId) => {
 
     if (error) throw error;
 
-    // Get category and citizen data separately
-    const [categoryResult, citizenResult] = await Promise.all([
-      supabase
-        .from('categories')
-        .select('category_id, category_name, description')
-        .eq('category_id', data.category_id)
-        .single(),
-      supabase
-        .from('citizens')
-        .select('citizen_id, name, email, phone')
-        .eq('citizen_id', data.citizen_id)
-        .single()
-    ]);
+    // Get category data only (skip citizen data since we already have it)
+    const { data: categoryData, error: categoryError } = await supabase
+      .from('categories')
+      .select('category_id, category_name, description')
+      .eq('category_id', data.category_id)
+      .single();
+
+    if (categoryError) {
+      console.warn('Failed to fetch category data:', categoryError);
+    }
 
     return {
       ...data,
-      categories: categoryResult.data,
-      citizens: citizenResult.data
+      categories: categoryData,
+      // Use citizen data we already have
+      citizens: {
+        citizen_id: citizen.citizen_id,
+        name: citizen.name || 'Unknown',
+        email: citizen.email || 'No email',
+        phone: citizen.phone || 'No phone'
+      }
     };
   } catch (error) {
     console.error('Error fetching complaint:', error);
