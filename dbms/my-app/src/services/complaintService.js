@@ -1,6 +1,4 @@
 import { supabase } from "./supabase";
-const { data: { user }, error } = await supabase.auth.getUser();
-console.log(user?.id); // should not be null
 
 // Get complaints for a specific citizen
 export const getCitizenComplaints = async (citizenId) => {
@@ -68,7 +66,10 @@ export const getComplaintById = async (complaintId) => {
 };
 
 // File a new complaint
-export const fileComplaint = async (values,citizenId,departmentId) => {
+export const fileComplaint = async (values, citizenId, departmentId) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated.");
+
   const { category, location, description, photo, title } = values
 
   // Get the category info to determine priority
@@ -93,10 +94,10 @@ export const fileComplaint = async (values,citizenId,departmentId) => {
 
     if (uploadError) throw uploadError
 
-    const { publicUrl } = supabase.storage
+    const { data } = supabase.storage
       .from('complaint_photos')
       .getPublicUrl(fileName)
-    photo_url = publicUrl
+    photo_url = data.publicUrl
   }
 
   // Insert complaint

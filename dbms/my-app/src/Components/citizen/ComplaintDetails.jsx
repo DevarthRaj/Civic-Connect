@@ -16,20 +16,24 @@ const statusColors = {
 };
 
 const ComplaintDetails = () => {
-  const { complaintId } = useParams();
+  const { id: complaintId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [complaint, setComplaint] = useState(null);
+  const [error, setError] = useState(null);
   const [comment, setComment] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     const fetchComplaint = async () => {
       try {
+        setError(null);
         const data = await getComplaintById(complaintId);
+        console.log('Complaint data with photo URL:', data.photo_url);
         setComplaint(data);
       } catch (err) {
         console.error('Error fetching complaint', err);
+        setError(err.message || 'Failed to load complaint details');
       } finally {
         setLoading(false);
       }
@@ -59,6 +63,14 @@ const ComplaintDetails = () => {
   const formatDate = (dateString) => new Date(dateString).toLocaleString();
 
   if (loading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+  if (error) return (
+    <Box p={2}>
+      <Button startIcon={<ArrowBack />} onClick={() => navigate('/my-complaints')} sx={{ mb: 2 }}>
+        Back to My Complaints
+      </Button>
+      <Alert severity="error">{error}</Alert>
+    </Box>
+  );
   if (!complaint) return <Alert severity="error">Complaint not found</Alert>;
 
   return (
@@ -87,6 +99,47 @@ const ComplaintDetails = () => {
             <Typography variant="body1" paragraph>
               {complaint.description}
             </Typography>
+
+            {complaint.photo_url && (
+              <>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Photo Evidence
+                </Typography>
+                <Box sx={{ mb: 2, textAlign: 'center' }}>
+                  <img 
+                    src={complaint.photo_url} 
+                    alt="Complaint evidence" 
+                    style={{ 
+                      maxWidth: '100%', 
+                      maxHeight: '400px', 
+                      objectFit: 'contain',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      border: '1px solid #e0e0e0'
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully:', complaint.photo_url);
+                    }}
+                    onError={(e) => {
+                      console.error('Failed to load image:', complaint.photo_url);
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                  <Typography 
+                    variant="body2" 
+                    color="error" 
+                    sx={{ display: 'none', mt: 1, p: 2, backgroundColor: '#ffebee', borderRadius: 1 }}
+                  >
+                    Failed to load image. The photo may have been moved or deleted.
+                    <br />
+                    <Typography variant="caption" component="span">
+                      URL: {complaint.photo_url}
+                    </Typography>
+                  </Typography>
+                </Box>
+              </>
+            )}
 
             <Divider sx={{ my: 2 }} />
 

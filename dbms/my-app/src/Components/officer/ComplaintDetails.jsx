@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Button, Divider, Chip,
-  TextField, MenuItem, Select, FormControl, InputLabel
+  TextField, MenuItem, Select, FormControl, InputLabel,
+  Alert, CircularProgress
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../../services/supabase';
+import { officerService } from '../../services/officerService';
 
 const OfficerComplaintDetails = () => {
   const { id } = useParams();
@@ -12,31 +13,24 @@ const OfficerComplaintDetails = () => {
   const [complaint, setComplaint] = useState(null);
   const [status, setStatus] = useState('');
   const [note, setNote] = useState('');
-  const [updates, setUpdates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     const fetchComplaint = async () => {
-      const { data, error } = await supabase
-        .from('complaints')
-        .select(`
-          complaint_id,
-          title,
-          description,
-          status,
-          created_at,
-          categories(category_name),
-          citizens(full_name),
-          updates(status, note, created_at, officer)
-        `)
-        .eq('complaint_id', id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching complaint:', error.message);
-      } else {
+      try {
+        setLoading(true);
+        setError('');
+        const data = await officerService.getComplaintById(id);
         setComplaint(data);
         setStatus(data.status);
-        setUpdates(data.updates || []);
+      } catch (error) {
+        console.error('Error fetching complaint:', error);
+        setError('Failed to load complaint details');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -44,33 +38,52 @@ const OfficerComplaintDetails = () => {
   }, [id]);
 
   const handleSave = async () => {
-    if (!note) return;
+    if (!status) {
+      setError('Please select a status');
+      return;
+    }
 
-    const newUpdate = {
-      status,
-      note,
-      created_at: new Date().toISOString(),
-      officer: 'You',
-    };
-
-    setUpdates([...updates, newUpdate]);
-    setNote('');
-
-    // Update in DB
-    await supabase
-      .from('complaints')
-      .update({ status })
-      .eq('complaint_id', id);
-
-    await supabase.from('updates').insert([{
-      complaint_id: id,
-      status,
-      note,
-      officer: 'Officer User'
-    }]);
+    try {
+      setUpdating(true);
+      setError('');
+      setSuccess('');
+      
+      await officerService.updateComplaintStatus(id, status);
+      
+      // Update local state
+      setComplaint(prev => ({ ...prev, status }));
+      setNote('');
+      setSuccess('Status updated successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error updating complaint:', error);
+      setError('Failed to update complaint status');
+    } finally {
+      setUpdating(false);
+    }
   };
 
-  if (!complaint) return <Typography>Loading...</Typography>;
+  if (loading) {
+    return (
+      <Box p={3} display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+        <Typography ml={2}>Loading complaint details...</Typography>
+      </Box>
+    );
+  }
+
+  if (error && !complaint) {
+    return (
+      <Box p={3}>
+        <Button onClick={() => navigate('/officer/complaints')} sx={{ mb: 2 }}>
+          Back to Complaint Management
+        </Button>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box p={3}>
@@ -81,37 +94,81 @@ const OfficerComplaintDetails = () => {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box mb={2}>
           <Typography variant="subtitle1">Complaint ID: <b>{complaint.complaint_id}</b></Typography>
-          <Typography variant="subtitle1">Citizen: <b>{complaint.citizens?.full_name}</b></Typography>
-          <Typography variant="subtitle1">Category: <b>{complaint.categories?.category_name}</b></Typography>
+          <Typography variant="subtitle1">Citizen: <b>{complaint.citizen_name}</b></Typography>
+          <Typography variant="subtitle1">Email: <b>{complaint.citizen_email}</b></Typography>
+          <Typography variant="subtitle1">Phone: <b>{complaint.citizen_phone}</b></Typography>
+          <Typography variant="subtitle1">Address: <b>{complaint.citizen_address}</b></Typography>
+          <Typography variant="subtitle1">Category: <b>{complaint.category_name}</b></Typography>
+          <Typography variant="subtitle1">Priority: <b>{complaint.priority}</b></Typography>
+          <Typography variant="subtitle1">Location: <b>{complaint.location || 'Not specified'}</b></Typography>
           <Typography variant="subtitle1">
-            Status: <Chip label={status} color={status === 'Resolved' ? 'success' : status === 'In Progress' ? 'warning' : 'default'} size="small" />
+            Status: <Chip 
+              label={status} 
+              color={status === 'Resolved' ? 'success' : status === 'In Progress' ? 'warning' : status === 'Rejected' ? 'error' : 'default'} 
+              size="small" 
+            />
           </Typography>
           <Typography variant="subtitle1">Created At: <b>{new Date(complaint.created_at).toLocaleDateString()}</b></Typography>
         </Box>
         <Divider sx={{ my: 2 }} />
+        <Typography variant="h6" gutterBottom>Description</Typography>
         <Typography variant="body1" mb={2}>{complaint.description}</Typography>
+        
+        {complaint.photo_url && (
+          <>
+            <Typography variant="h6" gutterBottom>Photo Evidence</Typography>
+            <Box mb={2}>
+              <img 
+                src={complaint.photo_url} 
+                alt="Complaint evidence" 
+                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+              />
+            </Box>
+          </>
+        )}
         <Divider sx={{ my: 2 }} />
-        <Typography variant="h6" mb={1}>Update Status / Add Note</Typography>
+        <Typography variant="h6" mb={1}>Update Status</Typography>
+        
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+        
         <Box display="flex" gap={2} mb={2}>
           <FormControl size="small" sx={{ minWidth: 140 }}>
             <InputLabel>Status</InputLabel>
-            <Select value={status} label="Status" onChange={e => setStatus(e.target.value)}>
+            <Select value={status} label="Status" onChange={e => setStatus(e.target.value)} disabled={updating}>
               <MenuItem value="Pending">Pending</MenuItem>
               <MenuItem value="In Progress">In Progress</MenuItem>
               <MenuItem value="Resolved">Resolved</MenuItem>
+              <MenuItem value="Rejected">Rejected</MenuItem>
             </Select>
           </FormControl>
-          <TextField size="small" label="Remarks" value={note} onChange={e => setNote(e.target.value)} sx={{ flex: 1 }} />
-          <Button variant="contained" color="primary" onClick={handleSave}>Save</Button>
+          <TextField 
+            size="small" 
+            label="Remarks (Optional)" 
+            value={note} 
+            onChange={e => setNote(e.target.value)} 
+            sx={{ flex: 1 }}
+            disabled={updating}
+          />
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={handleSave}
+            disabled={updating || status === complaint.status}
+          >
+            {updating ? 'Updating...' : 'Update Status'}
+          </Button>
         </Box>
         <Divider sx={{ my: 2 }} />
-        <Typography variant="h6" mb={1}>Timeline</Typography>
-        {updates.map((u, idx) => (
-          <Paper key={idx} sx={{ p: 1, mb: 1 }}>
-            <Typography variant="body2"><b>{u.status}</b> - {u.note}</Typography>
-            <Typography variant="caption" color="text.secondary">{new Date(u.created_at).toLocaleDateString()} by {u.officer}</Typography>
-          </Paper>
-        ))}
+        <Typography variant="h6" mb={1}>Status History</Typography>
+        <Paper sx={{ p: 2, backgroundColor: 'grey.50' }}>
+          <Typography variant="body2">
+            <b>Current Status:</b> {complaint.status}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Last Updated: {new Date(complaint.updated_at || complaint.created_at).toLocaleString()}
+          </Typography>
+        </Paper>
       </Paper>
     </Box>
   );

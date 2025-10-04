@@ -35,7 +35,7 @@ const ComplaintManagement = () => {
 
   const filteredComplaints = complaints.filter(c =>
     (!status || c.status === status) &&
-    (!category || c.category === category) &&
+    (!category || c.category_name === category) &&
     (!search ||
       c.citizen_name?.toLowerCase().includes(search.toLowerCase()) ||
       c.complaint_id.toString().includes(search) ||
@@ -57,10 +57,10 @@ const ComplaintManagement = () => {
             <InputLabel>Status</InputLabel>
             <Select value={status} label="Status" onChange={e => setStatus(e.target.value)}>
               <MenuItem value="">All</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="in-progress">In Progress</MenuItem>
-              <MenuItem value="resolved">Resolved</MenuItem>
-              <MenuItem value="rejected">Rejected</MenuItem>
+              <MenuItem value="Pending">Pending</MenuItem>
+              <MenuItem value="In Progress">In Progress</MenuItem>
+              <MenuItem value="Resolved">Resolved</MenuItem>
+              <MenuItem value="Rejected">Rejected</MenuItem>
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -111,7 +111,7 @@ const ComplaintManagement = () => {
                   >
                     <TableCell>{row.complaint_id}</TableCell>
                     <TableCell>{row.citizen_name || 'N/A'}</TableCell>
-                    <TableCell>{row.category || 'N/A'}</TableCell>
+                    <TableCell>{row.category_name || 'N/A'}</TableCell>
                     <TableCell>{row.status}</TableCell>
                     <TableCell>{new Date(row.created_at).toLocaleDateString()}</TableCell>
                   </TableRow>
