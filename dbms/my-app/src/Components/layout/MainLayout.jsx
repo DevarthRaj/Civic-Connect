@@ -66,7 +66,8 @@ const MainLayout = ({ children }) => {
     ...(isOfficer
       ? [
           { text: 'Dashboard', icon: <DashboardIcon />, path: '/officer' },
-          { text: 'Complaints', icon: <AssignmentIcon />, path: '/officer/complaints' },
+          { text: 'All Complaints', icon: <AssignmentIcon />, path: '/officer/complaints' },
+          { text: 'My Complaints', icon: <ListAltIcon />, path: '/officer/my-complaints' },
           { text: 'Reports', icon: <BarChartIcon />, path: '/officer/reports' },
         ]
       : []),
