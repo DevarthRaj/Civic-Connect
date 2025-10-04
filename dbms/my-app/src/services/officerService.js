@@ -59,9 +59,22 @@ export const officerService = {
 
   async getComplaintStats() {
     try {
-      const { data, error } = await supabase.rpc('get_complaint_stats');
+      // Get all complaints to calculate stats manually
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('status, priority');
+
       if (error) throw error;
-      return data[0];
+
+      const stats = {
+        total: data?.length || 0,
+        pending: data?.filter(c => c.status === 'Pending').length || 0,
+        in_progress: data?.filter(c => c.status === 'In Progress').length || 0,
+        resolved: data?.filter(c => c.status === 'Resolved').length || 0,
+        high_priority: data?.filter(c => c.priority === 'High').length || 0
+      };
+
+      return stats;
     } catch (error) {
       console.error('Error fetching complaint stats:', error);
       throw error;
@@ -131,6 +144,75 @@ export const officerService = {
       return data || [];
     } catch (error) {
       console.error('Error fetching categories:', error);
+      throw error;
+    }
+  },
+
+  async updateOfficerDepartment(userId, departmentName) {
+    try {
+      // First try with regular client
+      let { data, error } = await supabase
+        .from('users')
+        .update({ department: departmentName })
+        .eq('user_id', userId)
+        .select()
+        .single();
+      
+      // If regular client fails, try with admin client (bypasses RLS)
+      if (error) {
+        const result = await adminSupabase
+          .from('users')
+          .update({ department: departmentName })
+          .eq('user_id', userId)
+          .select()
+          .single();
+        
+        data = result.data;
+        error = result.error;
+      }
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error(`Error updating department for user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  async getOfficerDepartment(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('department')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) throw error;
+      return data?.department || 'None';
+    } catch (error) {
+      console.error(`Error fetching department for user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  async getComplaintsByDepartment(departmentName) {
+    try {
+      // First get all complaints with their categories
+      const { data, error } = await supabase
+        .from('complaints')
+        .select(COMPLAINT_SELECT_QUERY)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Filter by department name on the client side
+      const filteredData = data?.filter(complaint => 
+        complaint.category?.category_name === departmentName
+      ) || [];
+      
+      return filteredData.map(transformComplaint);
+    } catch (error) {
+      console.error(`Error fetching complaints for department ${departmentName}:`, error);
       throw error;
     }
   },

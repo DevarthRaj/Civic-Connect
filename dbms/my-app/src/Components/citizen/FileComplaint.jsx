@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, Typography, TextField, Button, Paper, Grid, FormControl, InputLabel, 
-  Select, MenuItem, FormHelperText, Card, CardContent, CardHeader, CircularProgress, Alert, IconButton 
+  Select, MenuItem, FormHelperText, Card, CardContent, CardHeader, CircularProgress, Alert, IconButton,
+  Avatar, Divider, Stepper, Step, StepLabel
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, CloudUpload as CloudUploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { 
+  ArrowBack as ArrowBackIcon, 
+  CloudUpload as CloudUploadIcon, 
+  CheckCircle as CheckCircleIcon,
+  Assignment as AssignmentIcon,
+  LocationOn as LocationIcon,
+  Category as CategoryIcon
+} from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { fileNewComplaint, getCategories } from "../../services/citizenService";
@@ -105,21 +113,29 @@ const FileComplaint = () => {
   }
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={() => navigate(-1)} sx={{ mr: 1 }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h4" component="h1">File a Complaint</Typography>
+    <Box sx={{ p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      {/* Header Section */}
+      <Box sx={{ mb: 4 }}>
+        <Box display="flex" alignItems="center" mb={2}>
+          <IconButton 
+            onClick={() => navigate(-1)} 
+            sx={{ mr: 2, bgcolor: 'white', boxShadow: 1 }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+            File a Complaint
+          </Typography>
+        </Box>
+        <Typography variant="h6" sx={{ color: '#666', mb: 2 }}>
+          Report an issue or concern to the authorities. All fields marked with * are required.
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
       </Box>
-
-      <Typography variant="body1" color="textSecondary" paragraph>
-        Please provide the details of your complaint. All fields marked with * are required.
-      </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+      <Card elevation={3} sx={{ p: 4, mb: 4 }}>
         <form onSubmit={formik.handleSubmit}>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -226,7 +242,7 @@ const FileComplaint = () => {
             </Grid>
           </Grid>
         </form>
-      </Paper>
+      </Card>
 
       <Paper elevation={2} sx={{ p: 3, backgroundColor: 'grey.50' }}>
         <Typography variant="h6" gutterBottom>Tips for a Better Complaint</Typography>

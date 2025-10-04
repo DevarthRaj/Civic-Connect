@@ -22,13 +22,19 @@ import {
   Tooltip,
   CircularProgress,
   Alert,
-  Button
+  Button,
+  Card,
+  CardContent,
+  Avatar,
+  Divider
 } from '@mui/material';
 import {
   Search as SearchIcon,
   FilterList as FilterListIcon,
   Visibility as VisibilityIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Assignment as AssignmentIcon,
+  ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { getUserComplaints } from '../../services/citizenService';
 
@@ -143,41 +149,120 @@ const MyComplaints = () => {
   if (error) return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
 
   return (
-    <Box>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">My Complaints</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => navigate('/file-complaint')}
-        >
-          New Complaint
-        </Button>
+    <Box sx={{ p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      {/* Header Section */}
+      <Box sx={{ mb: 4 }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+          <Box display="flex" alignItems="center">
+            <IconButton 
+              onClick={() => navigate('/citizen')}
+              sx={{ mr: 2, bgcolor: 'white', boxShadow: 1 }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+              My Complaints
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/file-complaint')}
+            sx={{ 
+              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+              boxShadow: '0 3px 5px 2px rgba(25, 118, 210, .3)',
+            }}
+          >
+            New Complaint
+          </Button>
+        </Box>
+        <Divider sx={{ mb: 3 }} />
       </Box>
 
-      {/* Stats */}
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-        <Paper sx={{ p: 2, flex: 1, minWidth: 180 }}>
-          <Typography variant="subtitle2" color="textSecondary">Total Complaints</Typography>
-          <Typography variant="h4">{complaints.length}</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1, minWidth: 180 }}>
-          <Typography variant="subtitle2" color="textSecondary">In Progress</Typography>
-          <Typography variant="h4" color="info.main">{getStatusCount('In Progress')}</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1, minWidth: 180 }}>
-          <Typography variant="subtitle2" color="textSecondary">Resolved</Typography>
-          <Typography variant="h4" color="success.main">{getStatusCount('Resolved')}</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1, minWidth: 180 }}>
-          <Typography variant="subtitle2" color="textSecondary">Pending</Typography>
-          <Typography variant="h4" color="error.main">{getStatusCount('Pending')}</Typography>
-        </Paper>
+      {/* Stats Cards */}
+      <Box display="flex" gap={3} mb={4} flexWrap="wrap">
+        <Card elevation={3} sx={{ flex: 1, minWidth: 200 }}>
+          <CardContent sx={{ textAlign: 'center', py: 3 }}>
+            <Avatar sx={{ 
+              mx: 'auto', 
+              mb: 2, 
+              width: 56, 
+              height: 56,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            }}>
+              <AssignmentIcon fontSize="large" />
+            </Avatar>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {complaints.length}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Total Complaints
+            </Typography>
+          </CardContent>
+        </Card>
+        
+        <Card elevation={3} sx={{ flex: 1, minWidth: 200 }}>
+          <CardContent sx={{ textAlign: 'center', py: 3 }}>
+            <Avatar sx={{ 
+              mx: 'auto', 
+              mb: 2, 
+              width: 56, 
+              height: 56,
+              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+            }}>
+              <AssignmentIcon fontSize="large" />
+            </Avatar>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {getStatusCount('In Progress')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              In Progress
+            </Typography>
+          </CardContent>
+        </Card>
+        
+        <Card elevation={3} sx={{ flex: 1, minWidth: 200 }}>
+          <CardContent sx={{ textAlign: 'center', py: 3 }}>
+            <Avatar sx={{ 
+              mx: 'auto', 
+              mb: 2, 
+              width: 56, 
+              height: 56,
+              background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
+            }}>
+              <AssignmentIcon fontSize="large" />
+            </Avatar>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {getStatusCount('Resolved')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Resolved
+            </Typography>
+          </CardContent>
+        </Card>
+        
+        <Card elevation={3} sx={{ flex: 1, minWidth: 200 }}>
+          <CardContent sx={{ textAlign: 'center', py: 3 }}>
+            <Avatar sx={{ 
+              mx: 'auto', 
+              mb: 2, 
+              width: 56, 
+              height: 56,
+              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+            }}>
+              <AssignmentIcon fontSize="large" />
+            </Avatar>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {getStatusCount('Pending')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Pending
+            </Typography>
+          </CardContent>
+        </Card>
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Card elevation={3} sx={{ p: 3, mb: 4 }}>
         <Box display="flex" flexWrap="wrap" gap={2} alignItems="center" mb={2}>
           <TextField
             placeholder="Search complaints..."
@@ -219,10 +304,10 @@ const MyComplaints = () => {
             </Tooltip>
           </Box>
         </Box>
-      </Paper>
+      </Card>
 
       {/* Table */}
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+      <Card elevation={3} sx={{ width: '100%', overflow: 'hidden' }}>
         <TableContainer sx={{ maxHeight: 600 }}>
           <Table stickyHeader>
             <TableHead>
@@ -307,7 +392,7 @@ const MyComplaints = () => {
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         )}
-      </Paper>
+      </Card>
     </Box>
   );
 };
