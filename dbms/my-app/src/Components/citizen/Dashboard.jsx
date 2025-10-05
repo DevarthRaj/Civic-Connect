@@ -10,7 +10,10 @@ import {
   Paper,
   Divider,
   CircularProgress,
-  Alert
+  Alert,
+  Avatar,
+  Chip,
+  LinearProgress
 } from '@mui/material';
 import {
   Assignment as ComplaintIcon,
@@ -18,7 +21,10 @@ import {
   CheckCircle as ResolvedIcon,
   Add as AddIcon,
   List as ListIcon,
-  Error as ErrorIcon
+  Error as ErrorIcon,
+  Schedule as ScheduleIcon,
+  TrendingUp as TrendingUpIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import { getUserDashboardStats } from "../../services/citizenService"; 
 
@@ -54,32 +60,31 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  const StatCard = ({ title, value, icon, color }) => (
-    <Card sx={{ height: '100%', borderLeft: `4px solid ${color}`, boxShadow: 2 }}>
-      <CardContent>
+  const StatCard = ({ title, value, icon, color, gradient }) => (
+    <Card elevation={4} sx={{ 
+      height: '100%', 
+      background: gradient,
+      color: 'white',
+      transition: 'transform 0.2s',
+      '&:hover': { transform: 'translateY(-4px)' }
+    }}>
+      <CardContent sx={{ py: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography color="textSecondary" gutterBottom>
+            <Typography sx={{ opacity: 0.9, mb: 1 }}>
               {title}
             </Typography>
-            <Typography variant="h4" component="div">
+            <Typography variant="h3" component="div" sx={{ fontWeight: 'bold' }}>
               {value}
             </Typography>
           </Box>
-          <Box
-            sx={{
-              backgroundColor: `${color}20`,
-              borderRadius: '50%',
-              width: 56,
-              height: 56,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: color,
-            }}
-          >
+          <Avatar sx={{ 
+            bgcolor: 'rgba(255,255,255,0.2)', 
+            width: 64, 
+            height: 64 
+          }}>
             {icon}
-          </Box>
+          </Avatar>
         </Box>
       </CardContent>
     </Card>
@@ -140,86 +145,183 @@ const Dashboard = () => {
     );
   }
 
-  return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard
-      </Typography>
-      <Typography variant="body1" color="textSecondary" paragraph>
-        Welcome back! Here's an overview of your complaints and quick actions.
-      </Typography>
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  
+  const getProgressPercentage = () => {
+    if (stats.total === 0) return 0;
+    return Math.round((stats.resolved / stats.total) * 100);
+  };
 
-      {/* Stats Cards */}
+  return (
+    <Box sx={{ p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      {/* Header Section */}
       <Box sx={{ mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Total Complaints"
-              value={stats.total}
-              icon={<ComplaintIcon />}
-              color="#3f51b5"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="In Progress"
-              value={stats.inProgress}
-              icon={<InProgressIcon />}
-              color="#ff9800"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Resolved"
-              value={stats.resolved}
-              icon={<ResolvedIcon />}
-              color="#4caf50"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Pending"
-              value={stats.pending}
-              icon={<InProgressIcon />}
-              color="#f44336"
-            />
-          </Grid>
-        </Grid>
+        <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 1 }}>
+          Citizen Dashboard
+        </Typography>
+        <Typography variant="h6" sx={{ color: '#666', mb: 2 }}>
+          Welcome back, {user.name || 'Citizen'}! Track your complaints and civic engagement.
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
       </Box>
 
-      {/* Quick Actions */}
-      <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 2 }}>
-        Quick Actions
-      </Typography>
+      {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <QuickAction
-            icon={<AddIcon />}
-            title="File a New Complaint"
-            description="Report a new issue or concern to the authorities."
-            buttonText="File Complaint"
-            onClick={() => navigate('/file-complaint')}
-            color="primary"
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Total Complaints"
+            value={stats.total}
+            icon={<ComplaintIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <QuickAction
-            icon={<ListIcon />}
-            title="View My Complaints"
-            description="Check the status of your submitted complaints."
-            buttonText="View Complaints"
-            onClick={() => navigate('/my-complaints')}
-            color="secondary"
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="In Progress"
+            value={stats.inProgress}
+            icon={<TrendingUpIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Resolved"
+            value={stats.resolved}
+            icon={<ResolvedIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Pending"
+            value={stats.pending}
+            icon={<ScheduleIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
           />
         </Grid>
       </Grid>
 
+      {/* Progress Section */}
+      <Card elevation={3} sx={{ mb: 4, p: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+          <TrendingUpIcon sx={{ mr: 1, color: '#1976d2' }} />
+          Resolution Progress
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ width: '100%', mr: 1 }}>
+            <LinearProgress 
+              variant="determinate" 
+              value={getProgressPercentage()} 
+              sx={{ 
+                height: 10, 
+                borderRadius: 5,
+                backgroundColor: '#e0e0e0',
+                '& .MuiLinearProgress-bar': {
+                  borderRadius: 5,
+                  background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)'
+                }
+              }} 
+            />
+          </Box>
+          <Box sx={{ minWidth: 35 }}>
+            <Typography variant="body2" color="text.secondary">
+              {getProgressPercentage()}%
+            </Typography>
+          </Box>
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          {stats.resolved} out of {stats.total} complaints resolved
+        </Typography>
+      </Card>
+
+      {/* Quick Actions */}
+      <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+        <PersonIcon sx={{ mr: 1, color: '#1976d2' }} />
+        Quick Actions
+      </Typography>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <Card 
+            elevation={3} 
+            sx={{ 
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              '&:hover': { 
+                transform: 'translateY(-4px)', 
+                boxShadow: '0 8px 25px rgba(0,0,0,0.15)' 
+              }
+            }}
+            onClick={() => navigate('/file-complaint')}
+          >
+            <CardContent sx={{ textAlign: 'center', py: 4 }}>
+              <Avatar sx={{ 
+                mx: 'auto', 
+                mb: 2, 
+                width: 64, 
+                height: 64,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+              }}>
+                <AddIcon fontSize="large" />
+              </Avatar>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold' }}>
+                File New Complaint
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Report a new issue or concern to the authorities
+              </Typography>
+              <Button variant="contained" fullWidth>
+                File Complaint
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <Card 
+            elevation={3} 
+            sx={{ 
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              '&:hover': { 
+                transform: 'translateY(-4px)', 
+                boxShadow: '0 8px 25px rgba(0,0,0,0.15)' 
+              }
+            }}
+            onClick={() => navigate('/my-complaints')}
+          >
+            <CardContent sx={{ textAlign: 'center', py: 4 }}>
+              <Avatar sx={{ 
+                mx: 'auto', 
+                mb: 2, 
+                width: 64, 
+                height: 64,
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+              }}>
+                <ListIcon fontSize="large" />
+              </Avatar>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold' }}>
+                My Complaints
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Check the status of your submitted complaints
+              </Typography>
+              <Button variant="contained" fullWidth>
+                View Complaints
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
       {/* Recent Complaints */}
-      <Box sx={{ mt: 4 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6">Recent Complaints</Typography>
+      <Card elevation={3} sx={{ p: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
+            <ComplaintIcon sx={{ mr: 1, color: '#1976d2' }} />
+            Recent Complaints
+          </Typography>
           <Button
-            color="primary"
+            variant="outlined"
             onClick={() => navigate('/my-complaints')}
             size="small"
           >
@@ -228,87 +330,79 @@ const Dashboard = () => {
         </Box>
 
         {recentComplaints.length > 0 ? (
-          <Paper elevation={2}>
+          <Box>
             {recentComplaints.map((complaint, index) => (
               <React.Fragment key={complaint.complaint_id}>
                 <Box
                   sx={{
                     p: 2,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    borderRadius: 2,
                     cursor: 'pointer',
-                    '&:hover': { backgroundColor: 'action.hover' }
+                    transition: 'all 0.2s',
+                    '&:hover': { 
+                      backgroundColor: '#f5f5f5',
+                      transform: 'translateX(4px)'
+                    }
                   }}
                   onClick={() => navigate(`/complaint/${complaint.complaint_id}`)}
                 >
-                  <Box>
-                    <Typography variant="subtitle1">
-                      {complaint.categories?.category_name || 'N/A'}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {complaint.description?.length > 100 
-                        ? `${complaint.description.substring(0, 100)}...` 
-                        : complaint.description}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {new Date(complaint.created_at).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Box
-                      component="span"
-                      sx={{
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 1,
-                        fontSize: '0.75rem',
-                        fontWeight: 'medium',
-                        backgroundColor:
-                          complaint.status === 'Resolved'
-                            ? 'success.light'
-                            : complaint.status === 'In Progress'
-                              ? 'warning.light'
-                              : complaint.status === 'Rejected'
-                                ? 'error.light'
-                                : 'info.light',
-                        color:
-                          complaint.status === 'Resolved'
-                            ? 'success.dark'
-                            : complaint.status === 'In Progress'
-                              ? 'warning.dark'
-                              : complaint.status === 'Rejected'
-                                ? 'error.dark'
-                                : 'info.dark',
-                      }}
-                    >
-                      {complaint.status}
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Box display="flex" alignItems="center" mb={1}>
+                        <Chip 
+                          label={complaint.categories?.category_name || 'N/A'}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(complaint.created_at).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        {complaint.description?.length > 100 
+                          ? `${complaint.description.substring(0, 100)}...` 
+                          : complaint.description}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ ml: 2 }}>
+                      <Chip 
+                        label={complaint.status}
+                        size="small"
+                        color={
+                          complaint.status === 'Resolved' ? 'success' :
+                          complaint.status === 'In Progress' ? 'info' :
+                          complaint.status === 'Rejected' ? 'error' : 'warning'
+                        }
+                        variant="filled"
+                      />
                     </Box>
                   </Box>
                 </Box>
-                {index < recentComplaints.length - 1 && <Divider />}
+                {index < recentComplaints.length - 1 && <Divider sx={{ my: 1 }} />}
               </React.Fragment>
             ))}
-          </Paper>
+          </Box>
         ) : (
-          <Paper elevation={2} sx={{ p: 3, textAlign: 'center' }}>
-            <Box sx={{ color: 'text.secondary', mb: 1 }}>
-              <ErrorIcon fontSize="large" />
-            </Box>
-            <Typography color="textSecondary">
-              You haven't filed any complaints yet.
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <ErrorIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              No Complaints Yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              You haven't filed any complaints yet. Start by reporting an issue.
             </Typography>
             <Button
-              variant="text"
-              color="primary"
+              variant="contained"
               onClick={() => navigate('/file-complaint')}
-              sx={{ mt: 1 }}
+              startIcon={<AddIcon />}
             >
-              File your first complaint
+              File Your First Complaint
             </Button>
-          </Paper>
+          </Box>
         )}
-      </Box>
+      </Card>
     </Box>
   );
 };

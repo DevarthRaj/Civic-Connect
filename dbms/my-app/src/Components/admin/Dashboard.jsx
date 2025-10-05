@@ -21,7 +21,13 @@ import {
   FormControl,
   InputLabel,
   Snackbar,
-  Alert
+  Alert,
+  Card,
+  CardContent,
+  Avatar,
+  Chip,
+  Divider,
+  LinearProgress
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -29,7 +35,10 @@ import {
   CheckCircle as CheckCircleIcon,
   Pending as PendingIcon,
   Warning as WarningIcon,
-  BarChart as BarChartIcon
+  BarChart as BarChartIcon,
+  TrendingUp as TrendingUpIcon,
+  AdminPanelSettings as AdminIcon,
+  Speed as SpeedIcon
 } from '@mui/icons-material';
 import { supabase } from '../../services/supabase';
 import { adminOperations } from '../../services/adminSupabase';
@@ -206,121 +215,233 @@ const Dashboard = () => {
     },
   ];
 
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  
+  const getResolutionRate = () => {
+    const totalComplaints = stats.find(s => s.title === 'Total Complaints')?.value || 0;
+    const resolvedComplaints = stats.find(s => s.title === 'Resolved')?.value || 0;
+    if (totalComplaints === 0) return 0;
+    return Math.round((resolvedComplaints / totalComplaints) * 100);
+  };
+
+  const StatCard = ({ title, value, icon, gradient }) => (
+    <Card elevation={4} sx={{ 
+      height: '100%', 
+      background: gradient,
+      color: 'white',
+      transition: 'transform 0.2s',
+      '&:hover': { transform: 'translateY(-4px)' }
+    }}>
+      <CardContent sx={{ py: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box>
+            <Typography sx={{ opacity: 0.9, mb: 1 }}>
+              {title}
+            </Typography>
+            <Typography variant="h3" component="div" sx={{ fontWeight: 'bold' }}>
+              {value}
+            </Typography>
+          </Box>
+          <Avatar sx={{ 
+            bgcolor: 'rgba(255,255,255,0.2)', 
+            width: 64, 
+            height: 64 
+          }}>
+            {icon}
+          </Avatar>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        Admin Dashboard
-      </Typography>
+    <Box sx={{ p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      {/* Header Section */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 1 }}>
+          Admin Dashboard
+        </Typography>
+        <Typography variant="h6" sx={{ color: '#666', mb: 2 }}>
+          Welcome back, {user.name || 'Administrator'}! Manage your civic platform efficiently.
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
+      </Box>
       
-      <Grid container spacing={3} sx={{ mt: 2 }}>
-        {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Paper 
-              elevation={3} 
-              sx={{ 
-                p: 3, 
-                display: 'flex', 
-                alignItems: 'center',
-                '&:hover': {
-                  transform: 'translateY(-5px)',
-                  transition: 'transform 0.3s ease-in-out',
-                },
-              }}
-            >
-              <Box 
-                sx={{ 
-                  backgroundColor: `${stat.color}22`, 
-                  borderRadius: '50%',
-                  width: 60,
-                  height: 60,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mr: 2,
-                  color: stat.color
-                }}
-              >
-                {stat.icon}
-              </Box>
-              <Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {stat.value}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {stat.title}
-                </Typography>
-              </Box>
-            </Paper>
-          </Grid>
-        ))}
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={2}>
+          <StatCard
+            title="Total Users"
+            value={stats.find(s => s.title === 'Total Users')?.value || 0}
+            icon={<PeopleIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <StatCard
+            title="Total Complaints"
+            value={stats.find(s => s.title === 'Total Complaints')?.value || 0}
+            icon={<AssignmentIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <StatCard
+            title="Resolved"
+            value={stats.find(s => s.title === 'Resolved')?.value || 0}
+            icon={<CheckCircleIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <StatCard
+            title="Pending"
+            value={stats.find(s => s.title === 'Pending')?.value || 0}
+            icon={<PendingIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <StatCard
+            title="High Priority"
+            value={stats.find(s => s.title === 'High Priority')?.value || 0}
+            icon={<WarningIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <StatCard
+            title="Departments"
+            value={stats.find(s => s.title === 'Departments')?.value || 0}
+            icon={<BarChartIcon fontSize="large" />}
+            gradient="linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)"
+          />
+        </Grid>
       </Grid>
 
-      <Grid container spacing={3} sx={{ mt: 1 }}>
+      {/* System Performance */}
+      <Card elevation={3} sx={{ mb: 4, p: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+          <SpeedIcon sx={{ mr: 1, color: '#1976d2' }} />
+          System Performance
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ width: '100%', mr: 1 }}>
+            <LinearProgress 
+              variant="determinate" 
+              value={getResolutionRate()} 
+              sx={{ 
+                height: 10, 
+                borderRadius: 5,
+                backgroundColor: '#e0e0e0',
+                '& .MuiLinearProgress-bar': {
+                  borderRadius: 5,
+                  background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)'
+                }
+              }} 
+            />
+          </Box>
+          <Box sx={{ minWidth: 35 }}>
+            <Typography variant="body2" color="text.secondary">
+              {getResolutionRate()}%
+            </Typography>
+          </Box>
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          Resolution Rate: {stats.find(s => s.title === 'Resolved')?.value || 0} out of {stats.find(s => s.title === 'Total Complaints')?.value || 0} complaints resolved
+        </Typography>
+      </Card>
+
+      <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">Recent Complaints</Typography>
-              <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }}>
-                View All
+          <Card elevation={3} sx={{ p: 3 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
+                <AssignmentIcon sx={{ mr: 1, color: '#1976d2' }} />
+                Recent Complaints
               </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setOpenViewReports(true)}
+              >
+                View All
+              </Button>
             </Box>
             <Box>
-              {[1, 2, 3].map((item) => (
+              {complaints.slice(0, 3).map((complaint, index) => (
                 <Box 
-                  key={item} 
+                  key={complaint.complaint_id || index} 
                   sx={{ 
                     p: 2, 
-                    borderBottom: '1px solid #eee',
-                    '&:hover': { backgroundColor: '#f9f9f9' } 
+                    borderRadius: 2,
+                    mb: 1,
+                    transition: 'all 0.2s',
+                    '&:hover': { 
+                      backgroundColor: '#f5f5f5',
+                      transform: 'translateX(4px)'
+                    } 
                   }}
                 >
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="subtitle2">Complaint #{1000 + item}</Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {item} hour{item !== 1 ? 's' : ''} ago
-                    </Typography>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                        #{complaint.complaint_id?.toString().slice(-6) || `100${index + 1}`}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        {complaint.title || ["Garbage not collected", "Street light not working", "Water leakage issue"][index]}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ ml: 2 }}>
+                      <Chip 
+                        label={complaint.status || 'Pending'}
+                        size="small"
+                        color={
+                          complaint.status === 'resolved' ? 'success' :
+                          complaint.status === 'pending' ? 'warning' : 'info'
+                        }
+                        variant="filled"
+                      />
+                    </Box>
                   </Box>
-                  <Typography variant="body2" noWrap>
-                    {["Garbage not collected", "Street light not working", "Water leakage issue"][item - 1]}
-                  </Typography>
                 </Box>
               ))}
             </Box>
-          </Paper>
+          </Card>
         </Grid>
         
         <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ p: 3, mt: 3, height: '100%' }}>
-            <Typography variant="h6" mb={2}>Quick Actions</Typography>
+          <Card elevation={3} sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+              <AdminIcon sx={{ mr: 1, color: '#1976d2' }} />
+              Quick Actions
+            </Typography>
             <Grid container spacing={2}>
               {quickActions.map((action, index) => (
-                <Grid item xs={6} sm={4} key={index}>
-                  <Box 
+                <Grid item xs={6} key={index}>
+                  <Card 
+                    elevation={2}
                     onClick={action.onClick}
                     sx={{ 
-                      p: 2, 
-                      border: '1px solid #e0e0e0', 
-                      borderRadius: 1,
-                      textAlign: 'center',
                       cursor: 'pointer',
+                      transition: 'all 0.3s',
                       '&:hover': { 
-                        backgroundColor: '#f5f5f5',
-                        borderColor: '#1976d2',
-                      },
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+                      }
                     }}
                   >
-                    <Box fontSize={24} mb={1}>{action.icon}</Box>
-                    <Typography variant="body2">{action.label}</Typography>
-                  </Box>
+                    <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                      <Box fontSize={32} mb={1}>{action.icon}</Box>
+                      <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                        {action.label}
+                      </Typography>
+                    </CardContent>
+                  </Card>
                 </Grid>
               ))}
             </Grid>
-          </Paper>
+          </Card>
         </Grid>
       </Grid>
 

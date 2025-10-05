@@ -1,5 +1,6 @@
 import ComplaintManagement from './Components/officer/ComplaintManagement';
 import OfficerComplaintDetails from './Components/officer/ComplaintDetails';
+import OfficerMyComplaints from './Components/officer/MyComplaints';
 
 // Officer Pages
 import OfficerDashboard from './Components/officer/Dashboard';
@@ -128,6 +129,13 @@ function App() {
             <ProtectedRoute requiredRole="officer">
               <MainLayout>
                 <ComplaintManagement />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/officer/my-complaints" element={
+            <ProtectedRoute requiredRole="officer">
+              <MainLayout>
+                <OfficerMyComplaints />
               </MainLayout>
             </ProtectedRoute>
           } />
