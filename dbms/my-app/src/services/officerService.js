@@ -148,6 +148,37 @@ export const officerService = {
     }
   },
 
+  async getDepartments() {
+    try {
+      const { data, error } = await supabase
+        .from('connection')
+        .select('department_name')
+        .order('department_name');
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      throw error;
+    }
+  },
+
+  async getDepartmentCategories(departmentName) {
+    try {
+      const { data, error } = await supabase
+        .from('connection')
+        .select('categories')
+        .eq('department_name', departmentName)
+        .single();
+
+      if (error) throw error;
+      return data?.categories || [];
+    } catch (error) {
+      console.error(`Error fetching categories for department ${departmentName}:`, error);
+      throw error;
+    }
+  },
+
   async updateOfficerDepartment(userId, departmentName) {
     try {
       // First try with regular client
@@ -197,7 +228,15 @@ export const officerService = {
 
   async getComplaintsByDepartment(departmentName) {
     try {
-      // First get all complaints with their categories
+      // First get the categories for this department from connection table
+      const departmentCategories = await this.getDepartmentCategories(departmentName);
+      
+      if (!departmentCategories || departmentCategories.length === 0) {
+        console.log(`No categories found for department: ${departmentName}`);
+        return [];
+      }
+      
+      // Get all complaints with their categories
       const { data, error } = await supabase
         .from('complaints')
         .select(COMPLAINT_SELECT_QUERY)
@@ -205,9 +244,10 @@ export const officerService = {
 
       if (error) throw error;
       
-      // Filter by department name on the client side
+      // Filter complaints by categories that belong to this department
       const filteredData = data?.filter(complaint => 
-        complaint.category?.category_name === departmentName
+        complaint.category?.category_name && 
+        departmentCategories.includes(complaint.category.category_name)
       ) || [];
       
       return filteredData.map(transformComplaint);

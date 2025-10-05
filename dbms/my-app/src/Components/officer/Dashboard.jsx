@@ -31,7 +31,7 @@ const OfficerDashboard = () => {
     resolved: 0,
     highPriority: 0,
   });
-  const [categories, setCategories] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [currentDepartment, setCurrentDepartment] = useState('None');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [departmentDialogOpen, setDepartmentDialogOpen] = useState(false);
@@ -61,10 +61,10 @@ const OfficerDashboard = () => {
         }
         
         try {
-          categoriesData = await officerService.getCategories();
-          console.log('✅ Categories loaded:', categoriesData);
+          categoriesData = await officerService.getDepartments();
+          console.log('✅ Departments loaded:', categoriesData);
         } catch (err) {
-          console.error('❌ Categories failed:', err);
+          console.error('❌ Departments failed:', err);
           categoriesData = [];
         }
         
@@ -77,7 +77,7 @@ const OfficerDashboard = () => {
         }
         
         console.log('Stats data:', statsData);
-        console.log('Categories data:', categoriesData);
+        console.log('Departments data:', categoriesData);
         console.log('Department:', department);
         
         setStats({
@@ -87,7 +87,7 @@ const OfficerDashboard = () => {
           resolved: statsData.resolved,
           highPriority: statsData.high_priority
         });
-        setCategories(categoriesData);
+        setDepartments(categoriesData);
         setCurrentDepartment(department);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -478,20 +478,20 @@ const OfficerDashboard = () => {
               onChange={(e) => setSelectedDepartment(e.target.value)}
             >
               <MenuItem value="None">None (No Department)</MenuItem>
-              {categories.length === 0 ? (
-                <MenuItem disabled>No categories available</MenuItem>
+              {departments.length === 0 ? (
+                <MenuItem disabled>No departments available</MenuItem>
               ) : (
-                categories.map((category) => (
-                  <MenuItem key={category.category_id} value={category.category_name}>
-                    {category.category_name}
+                departments.map((department) => (
+                  <MenuItem key={department.department_name} value={department.department_name}>
+                    {department.department_name}
                   </MenuItem>
                 ))
               )}
             </Select>
           </FormControl>
-          {categories.length === 0 && (
+          {departments.length === 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Loading categories...
+              Loading departments...
             </Typography>
           )}
         </DialogContent>
