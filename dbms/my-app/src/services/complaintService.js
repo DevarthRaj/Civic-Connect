@@ -148,6 +148,32 @@ export const updateComplaint = async (complaintId, updates) => {
   return data[0];
 };
 
+// Delete complaint
+export const deleteComplaint = async (complaintId) => {
+  console.log(`Attempting to delete complaint: ${complaintId}`);
+
+  const { data, error } = await supabase
+    .from('complaints')
+    .delete()
+    .eq('complaint_id', complaintId)
+    .select(); // Important: .select() returns the deleted row
+
+  if (error) {
+    console.error('Supabase delete error:', error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  // If RLS prevents the delete, `data` will be null or an empty array.
+  // This is the crucial check.
+  if (!data || data.length === 0) {
+    console.warn('Delete operation did not return a deleted record. This is likely an RLS policy issue.');
+    throw new Error('You do not have permission to delete this complaint. Please check RLS policies.');
+  }
+
+  console.log('Successfully deleted complaint:', data[0]);
+  return data[0];
+};
+
 // Add citizen feedback (if you store feedback separately)
 export const addFeedback = async (feedbackData) => {
   const { data, error } = await supabase

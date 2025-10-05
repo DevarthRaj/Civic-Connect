@@ -49,11 +49,11 @@ const MainLayout = ({ children }) => {
           }),
           marginTop: '64px', // Height of AppBar
           marginLeft: sidebarOpen 
-            ? (isMobile ? 0 : '280px') 
-            : (isMobile ? 0 : '70px'),
+            ? (isMobile ? 0 : '240px') 
+            : (isMobile ? 0 : '60px'),
           width: sidebarOpen 
-            ? (isMobile ? '100%' : 'calc(100% - 280px)')
-            : (isMobile ? '100%' : 'calc(100% - 70px)'),
+            ? (isMobile ? '100%' : 'calc(100% - 240px)')
+            : (isMobile ? '100%' : 'calc(100% - 60px)'),
           minHeight: 'calc(100vh - 64px)',
           backgroundColor: '#f8fafc',
           position: 'relative'
@@ -63,8 +63,9 @@ const MainLayout = ({ children }) => {
         <Box
           sx={{
             p: { xs: 2, sm: 3 },
-            maxWidth: '100%',
-            mx: 'auto'
+            maxWidth: '1400px',
+            mx: 'auto',
+            width: '100%'
           }}
         >
           {children}

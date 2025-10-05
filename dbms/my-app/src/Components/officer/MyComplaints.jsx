@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, Button, Card, CardContent,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TextField, Select, MenuItem, InputLabel, FormControl, Alert,
-  Chip, Avatar, Divider, IconButton, Tooltip
+  Chip, Avatar, Divider, IconButton, Tooltip, CircularProgress
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -11,10 +11,13 @@ import {
   Business as BusinessIcon,
   Assignment as AssignmentIcon,
   Search as SearchIcon,
-  FilterList as FilterListIcon
+  FilterList as FilterListIcon,
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { officerService } from '../../services/officerService';
+import { deleteComplaint } from '../../services/complaintService';
 
 const MyComplaints = () => {
   const navigate = useNavigate();
@@ -29,6 +32,7 @@ const MyComplaints = () => {
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [deleteLoading, setDeleteLoading] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,8 +104,29 @@ const MyComplaints = () => {
     window.location.reload(); // Simple refresh for now
   };
 
+  const handleDeleteComplaint = async (complaintId) => {
+    if (!window.confirm('Are you sure you want to delete this complaint? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleteLoading(complaintId);
+    try {
+      await deleteComplaint(complaintId);
+
+      // Manually filter the deleted complaint from the state
+      setComplaints(prev => prev.filter(c => c.complaint_id !== complaintId));
+
+      alert('Complaint deleted successfully!');
+    } catch (err) {
+      console.error('Officer MyComplaints Delete Error:', err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
   return (
-    <Box sx={{ p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       {/* Header Section */}
       <Box sx={{ mb: 4 }}>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -129,7 +154,14 @@ const MyComplaints = () => {
       </Box>
 
       {/* Department Status Card */}
-      <Card elevation={3} sx={{ mb: 4, p: 3 }}>
+      <Card elevation={3} sx={{ 
+        mb: 4, 
+        p: 3,
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.2)'
+      }}>
         <Box display="flex" alignItems="center" mb={2}>
           <BusinessIcon sx={{ mr: 1, color: '#1976d2' }} />
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -180,7 +212,14 @@ const MyComplaints = () => {
       </Card>
 
       {/* Filters Card */}
-      <Card elevation={3} sx={{ mb: 4, p: 3 }}>
+      <Card elevation={3} sx={{ 
+        mb: 4, 
+        p: 3,
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.2)'
+      }}>
         <Box display="flex" alignItems="center" mb={3}>
           <FilterListIcon sx={{ mr: 1, color: '#1976d2' }} />
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -215,7 +254,12 @@ const MyComplaints = () => {
       </Card>
 
       {/* Complaints Table */}
-      <Card elevation={3}>
+      <Card elevation={3} sx={{
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,1) 100%)',
+        backdropFilter: 'blur(10px)',
+        overflow: 'hidden'
+      }}>
         <CardContent sx={{ p: 0 }}>
           <Box sx={{ p: 3, pb: 2 }}>
             <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -244,12 +288,13 @@ const MyComplaints = () => {
                   <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Priority</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredComplaints.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                       <Box textAlign="center">
                         <AssignmentIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
                         <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -271,7 +316,11 @@ const MyComplaints = () => {
                       hover
                       sx={{ 
                         cursor: 'pointer',
-                        '&:hover': { backgroundColor: '#f5f5f5' }
+                        transition: 'all 0.2s ease',
+                        '&:hover': { 
+                          backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                          transform: 'scale(1.01)'
+                        }
                       }}
                       onClick={() => navigate(`/officer/complaints/${row.complaint_id}`)}
                     >
@@ -325,6 +374,39 @@ const MyComplaints = () => {
                         <Typography variant="body2" color="text.secondary">
                           {new Date(row.created_at).toLocaleDateString()}
                         </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Tooltip title="View Details">
+                            <IconButton 
+                              size="small" 
+                              color="primary" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/officer/complaints/${row.complaint_id}`);
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Complaint">
+                            <IconButton 
+                              size="small" 
+                              color="error" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteComplaint(row.complaint_id);
+                              }}
+                              disabled={deleteLoading === row.complaint_id}
+                            >
+                              {deleteLoading === row.complaint_id ? (
+                                <CircularProgress size={16} />
+                              ) : (
+                                <DeleteIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))

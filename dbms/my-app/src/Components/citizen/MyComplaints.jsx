@@ -34,9 +34,11 @@ import {
   Visibility as VisibilityIcon,
   Refresh as RefreshIcon,
   Assignment as AssignmentIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { getUserComplaints } from '../../services/citizenService';
+import { deleteComplaint } from '../../services/complaintService';
 
 // Status & priority colors
 const statusColors = {
@@ -66,6 +68,7 @@ const MyComplaints = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
+  const [deleteLoading, setDeleteLoading] = useState(null);
 
   // Fetch complaints for current user
   const fetchComplaints = async () => {
@@ -137,6 +140,27 @@ const MyComplaints = () => {
     setSortConfig({ key: 'created_at', direction: 'desc' });
   };
 
+  const handleDeleteComplaint = async (complaintId) => {
+    if (!window.confirm('Are you sure you want to delete this complaint? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleteLoading(complaintId);
+    try {
+      await deleteComplaint(complaintId);
+      
+      // Refresh complaints list from the database to ensure consistency
+      fetchComplaints();
+
+      alert('Complaint deleted successfully!');
+    } catch (err) {
+      console.error('Citizen Delete Error:', err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
   const getStatusCount = (status) => complaints.filter((c) => c.status === status).length;
 
   if (loading && complaints.length === 0)
@@ -149,7 +173,7 @@ const MyComplaints = () => {
   if (error) return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       {/* Header Section */}
       <Box sx={{ mb: 4 }}>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -179,7 +203,15 @@ const MyComplaints = () => {
       </Box>
 
       {/* Stats Cards */}
-      <Box display="flex" gap={3} mb={4} flexWrap="wrap">
+      <Box display="flex" gap={3} mb={4} flexWrap="wrap" sx={{
+        '& > *': {
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+          }
+        }
+      }}>
         <Card elevation={3} sx={{ flex: 1, minWidth: 200 }}>
           <CardContent sx={{ textAlign: 'center', py: 3 }}>
             <Avatar sx={{ 
@@ -187,7 +219,9 @@ const MyComplaints = () => {
               mb: 2, 
               width: 56, 
               height: 56,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+              background: 'rgba(255,255,255,0.2)',
+              backdropFilter: 'blur(10px)',
+              border: '2px solid rgba(255,255,255,0.3)'
             }}>
               <AssignmentIcon fontSize="large" />
             </Avatar>
@@ -262,7 +296,14 @@ const MyComplaints = () => {
       </Box>
 
       {/* Filters */}
-      <Card elevation={3} sx={{ p: 3, mb: 4 }}>
+      <Card elevation={3} sx={{ 
+        p: 3, 
+        mb: 4,
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.2)'
+      }}>
         <Box display="flex" flexWrap="wrap" gap={2} alignItems="center" mb={2}>
           <TextField
             placeholder="Search complaints..."
@@ -307,7 +348,13 @@ const MyComplaints = () => {
       </Card>
 
       {/* Table */}
-      <Card elevation={3} sx={{ width: '100%', overflow: 'hidden' }}>
+      <Card elevation={3} sx={{ 
+        width: '100%', 
+        overflow: 'hidden',
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,1) 100%)',
+        backdropFilter: 'blur(10px)'
+      }}>
         <TableContainer sx={{ maxHeight: 600 }}>
           <Table stickyHeader>
             <TableHead>
@@ -331,7 +378,17 @@ const MyComplaints = () => {
                 filteredComplaints
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((complaint) => (
-                    <TableRow hover key={complaint.complaint_id}>
+                    <TableRow 
+                      hover 
+                      key={complaint.complaint_id}
+                      sx={{
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                          transform: 'scale(1.01)'
+                        }
+                      }}
+                    >
                       <TableCell>{complaint.complaint_id}</TableCell>
                       <TableCell>{complaint.categories?.category_name || '-'}</TableCell>
                       <TableCell>
@@ -355,11 +412,27 @@ const MyComplaints = () => {
                         {complaint.description}
                       </TableCell>
                       <TableCell>
-                        <Tooltip title="View Details">
-                          <IconButton size="small" color="primary" onClick={() => handleViewComplaint(complaint.complaint_id)}>
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Tooltip title="View Details">
+                            <IconButton size="small" color="primary" onClick={() => handleViewComplaint(complaint.complaint_id)}>
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Complaint">
+                            <IconButton 
+                              size="small" 
+                              color="error" 
+                              onClick={() => handleDeleteComplaint(complaint.complaint_id)}
+                              disabled={deleteLoading === complaint.complaint_id}
+                            >
+                              {deleteLoading === complaint.complaint_id ? (
+                                <CircularProgress size={16} />
+                              ) : (
+                                <DeleteIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))

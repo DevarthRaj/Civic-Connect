@@ -37,8 +37,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const drawerWidth = 280;
-const collapsedWidth = 70;
+const drawerWidth = 240;
+const collapsedWidth = 60;
 
 const EnhancedSidebar = ({ open, onToggle }) => {
   const navigate = useNavigate();
@@ -162,7 +162,7 @@ const EnhancedSidebar = ({ open, onToggle }) => {
       {/* Header Section */}
       <Box
         sx={{
-          p: open ? 3 : 1,
+          p: open ? 2 : 1,
           background: `linear-gradient(135deg, ${roleColors.primary} 0%, ${roleColors.accent} 100%)`,
           color: 'white',
           textAlign: open ? 'left' : 'center',
@@ -177,14 +177,14 @@ const EnhancedSidebar = ({ open, onToggle }) => {
                   bgcolor: alpha('#ffffff', 0.2),
                   color: 'white',
                   mr: 2,
-                  width: 48,
-                  height: 48
+                  width: 40,
+                  height: 40
                 }}
               >
                 <AccountCircleIcon />
               </Avatar>
               <Box>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
                   {user.name || 'User'}
                 </Typography>
                 <Chip
@@ -193,13 +193,13 @@ const EnhancedSidebar = ({ open, onToggle }) => {
                   sx={{
                     bgcolor: alpha('#ffffff', 0.2),
                     color: 'white',
-                    fontSize: '0.7rem',
-                    height: '20px'
+                    fontSize: '0.65rem',
+                    height: '18px'
                   }}
                 />
               </Box>
             </Box>
-            <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.85rem' }}>
+            <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
               Civic Connect Portal
             </Typography>
           </>
@@ -233,7 +233,7 @@ const EnhancedSidebar = ({ open, onToggle }) => {
                   display: 'block',
                   color: 'text.secondary',
                   fontWeight: 'bold',
-                  fontSize: '0.7rem',
+                  fontSize: '0.65rem',
                   letterSpacing: '0.5px'
                 }}
               >
@@ -258,9 +258,9 @@ const EnhancedSidebar = ({ open, onToggle }) => {
                         mx: open ? 1 : 0.5,
                         mb: 0.5,
                         borderRadius: open ? 2 : 1,
-                        minHeight: 48,
+                        minHeight: 44,
                         justifyContent: open ? 'initial' : 'center',
-                        px: open ? 2 : 1,
+                        px: open ? 1.5 : 0.8,
                         backgroundColor: isSelected 
                           ? alpha(roleColors.primary, 0.1)
                           : 'transparent',
@@ -277,7 +277,7 @@ const EnhancedSidebar = ({ open, onToggle }) => {
                       <ListItemIcon
                         sx={{
                           minWidth: 0,
-                          mr: open ? 2 : 'auto',
+                          mr: open ? 1.5 : 'auto',
                           justifyContent: 'center',
                           color: isSelected ? roleColors.primary : 'text.secondary',
                         }}
@@ -290,7 +290,7 @@ const EnhancedSidebar = ({ open, onToggle }) => {
                           primary={item.text}
                           sx={{
                             '& .MuiListItemText-primary': {
-                              fontSize: '0.9rem',
+                              fontSize: '0.85rem',
                               fontWeight: isSelected ? 600 : 400,
                               color: isSelected ? roleColors.primary : 'text.primary'
                             }
@@ -305,8 +305,8 @@ const EnhancedSidebar = ({ open, onToggle }) => {
                           sx={{
                             bgcolor: roleColors.secondary,
                             color: roleColors.primary,
-                            fontSize: '0.7rem',
-                            height: '20px'
+                            fontSize: '0.65rem',
+                            height: '18px'
                           }}
                         />
                       )}
@@ -362,8 +362,6 @@ const EnhancedSidebar = ({ open, onToggle }) => {
         keepMounted: true, // Better open performance on mobile.
       }}
       sx={{
-        width: open ? drawerWidth : (isMobile ? 0 : collapsedWidth),
-        flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: open ? drawerWidth : (isMobile ? drawerWidth : collapsedWidth),
           boxSizing: 'border-box',

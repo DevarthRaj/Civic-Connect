@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Paper, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, TablePagination, TextField, Button, IconButton,
-  Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Chip,
   FormControl, InputLabel, Select, MenuItem, Avatar, Divider,
   Tabs, Tab, Grid, Card, CardContent, CardActions, List, ListItem,
   ListItemIcon, ListItemText
@@ -13,9 +11,12 @@ import {
   Person as PersonIcon, Category as CategoryIcon, LocationOn as LocationIcon,
   CalendarToday as CalendarTodayIcon, Comment as CommentIcon, Check as CheckIcon,
   Close as CloseIcon, Refresh as RefreshIcon, Download as DownloadIcon, Print as PrintIcon,
-  Business as BusinessIcon // Added for department icon
+  Business as BusinessIcon, // Added for department icon
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
-import { officerService } from '../../services/officerService'; // Adjust path if needed
+import { officerService } from '../../services/officerService';
+import { deleteComplaint } from '../../services/complaintService';
 
 const ComplaintOversight = () => {
   const [complaints, setComplaints] = useState([]);
@@ -23,6 +24,53 @@ const ComplaintOversight = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await officerService.getAllComplaints();
+        
+        // Transform data to match the expected format for the component
+        const transformedComplaints = data.map(complaint => ({
+          id: complaint.complaint_id,
+          title: complaint.title,
+          description: complaint.description,
+          location: complaint.location,
+          // Use the joined category name, with a fallback
+          category: complaint.category ? complaint.category.category_name : 'Uncategorized',
+          status: complaint.status || 'Unknown',
+          priority: complaint.priority || 'Medium',
+          dateCreated: complaint.created_at,
+          lastUpdated: complaint.updated_at,
+          assignedTo: 'Not Assigned', // This can be replaced with real data if you add it
+          // Use the joined department name, with a fallback
+          assignedDepartment: complaint.department ? complaint.department.department_name : 'General',
+          // Use the joined citizen data, with fallbacks
+          citizen: { 
+            name: complaint.citizen ? complaint.citizen.name : 'Unknown Citizen', 
+            email: complaint.citizen ? complaint.citizen.email : 'No email', 
+            phone: complaint.citizen ? complaint.citizen.phone : 'No phone' 
+          },
+          // Mock updates, can be replaced with a real 'updates' table join
+          updates: [
+            { 
+              id: 1, 
+              type: 'status', 
+              text: 'Complaint registered', 
+              date: complaint.created_at, 
+              user: 'System' 
+            }
+          ]
+        }));
+        
+        setComplaints(transformedComplaints);
+      } catch (err) {
+        console.error('Error fetching complaints:', err);
+        setError(err.message || 'Failed to fetch complaints.');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchComplaints();
   }, []);
 
@@ -129,6 +177,27 @@ const ComplaintOversight = () => {
     setOpenDetails(false);
     setSelectedComplaint(null);
     setNewComment('');
+  };
+
+  const handleDeleteComplaint = async (complaintId) => {
+    if (!window.confirm('Are you sure you want to delete this complaint? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleteLoading(complaintId);
+    try {
+      await deleteComplaint(complaintId);
+
+      // Manually filter the deleted complaint from the state
+      setComplaints(prev => prev.filter(c => c.id !== complaintId));
+
+      alert('Complaint deleted successfully!');
+    } catch (err) {
+      console.error('Admin Delete Error:', err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setDeleteLoading(null);
+    }
   };
 
   // Filtering logic
