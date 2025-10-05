@@ -1,143 +1,75 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   CssBaseline,
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  Dashboard as DashboardIcon,
-  AddCircleOutline as AddCircleOutlineIcon,
-  ListAlt as ListAltIcon,
-  People as PeopleIcon,
-  Category as CategoryIcon,
-  Assignment as AssignmentIcon,
-  Assessment as AssessmentIcon,
-  ExitToApp as ExitToAppIcon,
-  Home as HomeIcon,
-  BarChart as BarChartIcon
-} from '@mui/icons-material';
-
-const drawerWidth = 240;
+import EnhancedHeader from './EnhancedHeader';
+import EnhancedSidebar from './EnhancedSidebar';
 
 const MainLayout = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const user = JSON.parse(localStorage.getItem('user')) || {};
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
-  const isAdmin = user.role === 'admin';
-  const isCitizen = user.role === 'citizen';
-  const isOfficer = user.role === 'officer';
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
-  // Role-based menu items
-  let menuItems = [
-    ...(isCitizen
-      ? [
-          { text: 'Dashboard', icon: <HomeIcon />, path: '/citizen' },
-          { text: 'File Complaint', icon: <AddCircleOutlineIcon />, path: '/file-complaint' },
-          { text: 'My Complaints', icon: <ListAltIcon />, path: '/my-complaints' },
-        ]
-      : []),
-    ...(isAdmin
-      ? [
-          { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
-          { text: 'Users', icon: <PeopleIcon />, path: '/admin/users' },
-          { text: 'Departments', icon: <CategoryIcon />, path: '/admin/departments' },
-          { text: 'Categories', icon: <CategoryIcon />, path: '/admin/categories' },
-          { text: 'Complaints', icon: <AssignmentIcon />, path: '/admin/complaints' },
-          { text: 'Reports', icon: <AssessmentIcon />, path: '/admin/reports' },
-        ]
-      : []),
-    ...(isOfficer
-      ? [
-          { text: 'Dashboard', icon: <DashboardIcon />, path: '/officer' },
-          { text: 'All Complaints', icon: <AssignmentIcon />, path: '/officer/complaints' },
-          { text: 'My Complaints', icon: <ListAltIcon />, path: '/officer/my-complaints' },
-          { text: 'Reports', icon: <BarChartIcon />, path: '/officer/reports' },
-        ]
-      : []),
-  ];
-
-  if (menuItems.length === 0) {
-    menuItems = [{ text: 'Home', icon: <HomeIcon />, path: '/' }];
-  }
+  // Auto-collapse sidebar on mobile
+  React.useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       <CssBaseline />
-
-      {/* Top Navbar */}
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Complaint Management System
-          </Typography>
-          <Typography variant="subtitle1" sx={{ mr: 2 }}>
-            {user.name || 'User'}
-          </Typography>
-          <Button color="inherit" onClick={handleLogout} startIcon={<ExitToAppIcon />}>
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-
-      {/* Sidebar */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
-        }}
-      >
-        <Toolbar />
-        <Divider />
-        <Box sx={{ overflow: 'auto' }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem
-                button
-                key={item.text}
-                onClick={() => navigate(item.path)}
-                selected={location.pathname === item.path}
-                sx={{
-                  '&.Mui-selected': {
-                    backgroundColor: 'primary.light',
-                    color: 'primary.contrastText',
-                    '&:hover': { backgroundColor: 'primary.dark' },
-                    '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-
-      {/* Page Content */}
+      
+      {/* Enhanced Header */}
+      <EnhancedHeader 
+        onSidebarToggle={handleSidebarToggle}
+        sidebarOpen={sidebarOpen}
+      />
+      
+      {/* Enhanced Sidebar */}
+      <EnhancedSidebar 
+        open={sidebarOpen}
+        onToggle={handleSidebarToggle}
+      />
+      
+      {/* Main Content Area */}
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, mt: 8, width: `calc(100% - ${drawerWidth}px)` }}
+        sx={{
+          flexGrow: 1,
+          transition: theme.transitions.create(['margin-left', 'width'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+          marginTop: '64px', // Height of AppBar
+          marginLeft: sidebarOpen 
+            ? (isMobile ? 0 : '240px') 
+            : (isMobile ? 0 : '60px'),
+          width: sidebarOpen 
+            ? (isMobile ? '100%' : 'calc(100% - 240px)')
+            : (isMobile ? '100%' : 'calc(100% - 60px)'),
+          minHeight: 'calc(100vh - 64px)',
+          backgroundColor: '#f8fafc',
+          position: 'relative'
+        }}
       >
-        {children}
+        {/* Content Container */}
+        <Box
+          sx={{
+            p: { xs: 2, sm: 3 },
+            maxWidth: '1400px',
+            mx: 'auto',
+            width: '100%'
+          }}
+        >
+          {children}
+        </Box>
       </Box>
     </Box>
   );
