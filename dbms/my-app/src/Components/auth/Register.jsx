@@ -1,7 +1,39 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { TextField, Button, Typography, Box, Alert, MenuItem, CircularProgress, Grid } from '@mui/material';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { 
+  TextField, 
+  Button, 
+  Typography, 
+  Box, 
+  Alert, 
+  MenuItem, 
+  CircularProgress, 
+  Grid,
+  InputAdornment,
+  IconButton,
+  Divider,
+  Fade,
+  Slide,
+  Stepper,
+  Step,
+  StepLabel,
+  Paper,
+  Chip,
+  alpha
+} from '@mui/material';
+import {
+  PersonAdd as PersonAddIcon,
+  Email as EmailIcon,
+  Lock as LockIcon,
+  Person as PersonIcon,
+  Home as HomeIcon,
+  LocationCity as LocationCityIcon,
+  Badge as BadgeIcon,
+  Visibility,
+  VisibilityOff,
+  Login as LoginIcon,
+  CheckCircle as CheckCircleIcon
+} from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { supabase } from '../../services/supabase';
@@ -39,8 +71,25 @@ const Register = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleClickShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const steps = ['Personal Info', 'Account Details', 'Address Info'];
 
   const formik = useFormik({
     initialValues: {
@@ -150,37 +199,73 @@ const Register = () => {
 
   if (success) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-        }}
-      >
+      <Fade in={success} timeout={800}>
         <Box
           sx={{
-            margin: 1,
-            backgroundColor: 'success.main',
-            borderRadius: '50%',
-            width: 50,
-            height: 50,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            mb: 2,
+            textAlign: 'center',
+            width: '100%'
           }}
         >
-          ✓
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 3,
+              boxShadow: '0 8px 32px rgba(76, 175, 80, 0.3)',
+              animation: 'pulse 2s infinite'
+            }}
+          >
+            <CheckCircleIcon sx={{ fontSize: 40, color: 'white' }} />
+          </Box>
+          
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontWeight: 'bold',
+              background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 2
+            }}
+          >
+            Registration Successful!
+          </Typography>
+          
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Welcome to Civic Connect! You will be redirected to the login page shortly...
+          </Typography>
+          
+          <Button
+            variant="contained"
+            component={Link}
+            to="/login"
+            startIcon={<LoginIcon />}
+            sx={{
+              py: 1.5,
+              px: 4,
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)'
+              }
+            }}
+          >
+            Go to Login
+          </Button>
         </Box>
-        <Typography component="h1" variant="h5" gutterBottom>
-          Registration Successful!
-        </Typography>
-        <Typography variant="body1">
-          You will be redirected to the login page shortly...
-        </Typography>
-      </Box>
+      </Fade>
     );
   }
 

@@ -16,7 +16,7 @@ import AuthLayout from './Components/layout/AuthLayout';
 
 // Auth Pages
 import Login from './Components/auth/Login';
-import Register from './Components/auth/Register';
+import Register from './Components/auth/EnhancedRegister';
 
 // Citizen Pages
 import CitizenDashboard from './Components/citizen/Dashboard';
