@@ -10,6 +10,9 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { useState } from 'react';
 
+// Import quick fix utility (makes it available in console)
+import './utils/quickFix';
+
 // Layouts
 import MainLayout from './Components/layout/MainLayout';
 import AuthLayout from './Components/layout/AuthLayout';

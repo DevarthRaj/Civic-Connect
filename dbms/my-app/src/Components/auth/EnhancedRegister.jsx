@@ -217,42 +217,8 @@ const Register = () => {
           throw new Error('Registration failed. Please try again.');
         }
 
-        // Insert user data into our users table
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([
-            {
-              user_id: authData.user.id,
-              name: values.name,
-              username: values.username,
-              email: values.email,
-              role: values.role,
-              created_at: new Date(),
-            },
-          ]);
-
-        if (insertError) {
-          console.error('User insert error:', insertError);
-        }
-
-        // If citizen, also insert into citizens table
-        if (values.role === 'citizen') {
-          const { error: citizenError } = await supabase
-            .from('citizens')
-            .insert([
-              {
-                user_id: authData.user.id,
-                address: values.address,
-                city: values.city,
-                pincode: values.pincode,
-                created_at: new Date(),
-              },
-            ]);
-
-          if (citizenError) {
-            console.error('Citizen insert error:', citizenError);
-          }
-        }
+        // Database trigger will handle user and citizen record creation automatically
+        console.log('Registration completed via Supabase Auth and database trigger');
 
         console.log('Registration successful:', authData);
         setSuccess(true);

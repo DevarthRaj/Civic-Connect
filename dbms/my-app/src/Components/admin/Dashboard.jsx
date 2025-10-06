@@ -87,9 +87,13 @@ const Dashboard = () => {
       const { data: depts, error: deptsError } = await adminOperations.getAllDepartments();
 
       if (!usersError && !complaintsError && !deptsError) {
-        const resolvedCount = complaintsData?.filter(c => c.status === 'resolved').length || 0;
-        const pendingCount = complaintsData?.filter(c => c.status === 'pending').length || 0;
-        const highPriorityCount = complaintsData?.filter(c => c.priority === 'high').length || 0;
+        // Debug: Log the actual status and priority values
+        console.log('Complaint statuses:', complaintsData?.map(c => c.status));
+        console.log('Complaint priorities:', complaintsData?.map(c => c.priority));
+        
+        const resolvedCount = complaintsData?.filter(c => c.status?.toLowerCase() === 'resolved').length || 0;
+        const pendingCount = complaintsData?.filter(c => c.status?.toLowerCase() === 'pending').length || 0;
+        const highPriorityCount = complaintsData?.filter(c => c.priority?.toLowerCase() === 'high').length || 0;
 
         setStats([
           { title: 'Total Users', value: users?.length || 0, icon: <PeopleIcon fontSize="large" />, color: '#1976d2' },
@@ -397,8 +401,8 @@ const Dashboard = () => {
                         label={complaint.status || 'Pending'}
                         size="small"
                         color={
-                          complaint.status === 'resolved' ? 'success' :
-                          complaint.status === 'pending' ? 'warning' : 'info'
+                          complaint.status?.toLowerCase() === 'resolved' ? 'success' :
+                          complaint.status?.toLowerCase() === 'pending' ? 'warning' : 'info'
                         }
                         variant="filled"
                       />
@@ -550,21 +554,15 @@ const Dashboard = () => {
                     <TableCell>{complaint.complaint_id}</TableCell>
                     <TableCell>{complaint.title}</TableCell>
                     <TableCell>
-                      <Box 
-                        sx={{ 
-                          px: 1, 
-                          py: 0.5, 
-                          borderRadius: 1, 
-                          backgroundColor: 
-                            complaint.status === 'resolved' ? '#e8f5e8' : 
-                            complaint.status === 'pending' ? '#fff3cd' : '#f8d7da',
-                          color: 
-                            complaint.status === 'resolved' ? '#2e7d32' : 
-                            complaint.status === 'pending' ? '#856404' : '#721c24'
-                        }}
-                      >
-                        {complaint.status}
-                      </Box>
+                      <Chip 
+                        label={complaint.status}
+                        size="small"
+                        color={
+                          complaint.status?.toLowerCase() === 'resolved' ? 'success' :
+                          complaint.status?.toLowerCase() === 'pending' ? 'warning' : 'info'
+                        }
+                        variant="filled"
+                      />
                     </TableCell>
                     <TableCell>{complaint.priority}</TableCell>
                     <TableCell>{complaint.location}</TableCell>
